@@ -1,0 +1,24 @@
+# --- Build Results ---
+[Bb]in/
+[Oo]bj/
+
+# --- Visual Studio ---
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+
+# --- JetBrains Rider ---
+.idea/
+*.sln.iml
+
+# --- Database ---
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# --- Avalonia specific ---
+!Avalonia.Themes.Default/
