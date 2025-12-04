@@ -7,14 +7,118 @@
         x:Class="uchat.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="uchat">
+        Title="uchat"  Background="#0e1621">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+        <Grid ColumnDefinitions="250, *">
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Border Margin="10 10 5 10" CornerRadius="25"  Grid.Column="0" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto, *">
+                <TextBlock Text="UCHAT" 
+                           Foreground="White" 
+                           FontWeight="Black" 
+                           FontSize="24" 
+                           Margin="20" 
+                           HorizontalAlignment="Center"
+                           LetterSpacing="2"/>
 
+                <StackPanel Grid.Row="1" Spacing="5" Margin="10">
+                    <Border Background="#2C303E" CornerRadius="10" Padding="10" Cursor="Hand">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="40" Height="40" CornerRadius="20" Background="#5865F2">
+                                <TextBlock Text="G" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="General Chat" Foreground="White" FontWeight="SemiBold"/>
+                                <TextBlock Text="online" Foreground="#8899A6" FontSize="11"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    
+                    <Border Background="Transparent" CornerRadius="10" Padding="10" Opacity="0.7">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="40" Height="40" CornerRadius="20" Background="#EB459E">
+                                <TextBlock Text="N" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Hikita" Foreground="White" FontWeight="SemiBold"/>
+                                <TextBlock Text="was online 1m ago" Foreground="#8899A6" FontSize="11"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1" RowDefinitions="60, *, 70">
+            <Border CornerRadius="25" Padding="20 0" Margin="5, 10, 10, 10" Grid.Row="0" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="Auto, *">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
+                        <TextBlock VerticalAlignment="Center" Text="#" Foreground="#8899A6" FontSize="20" FontWeight="Light"/>
+                        <TextBlock VerticalAlignment="Center" Text="General Chat" Foreground="White" FontWeight="Bold" FontSize="16"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" Padding="20">
+                <StackPanel Spacing="15">
+                    
+                    <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
+                        <Border Grid.RowSpan="2" Width="35" Height="35" CornerRadius="20" Background="#EB459E" VerticalAlignment="Top" Margin="0,5,0,0">
+                            <TextBlock Text="A" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="12"/>
+                        </Border>
+                        
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,2">
+                                <TextBlock Text="Nitita" Foreground="#EB459E" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="9:00 AM" Foreground="#72767D" FontSize="10" VerticalAlignment="Bottom"/>
+                            </StackPanel>
+                            
+                            <Border Background="#2F3136" CornerRadius="0,12,12,12" Padding="12">
+                                <TextBlock Text="Hello Illia" 
+                                           Foreground="#DCDDDE" TextWrapping="Wrap" LineHeight="20"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
+                         <StackPanel Grid.Column="0" Margin="0,0,10,0" HorizontalAlignment="Right">
+                            <Border Background="#2b5278" CornerRadius="12,12,0,12" Padding="12">
+                                <TextBlock Text="Hi mann" 
+                                           Foreground="White" TextWrapping="Wrap" LineHeight="20"/>
+                            </Border>
+                             <TextBlock Text="10:43 PM" Foreground="#72767D" FontSize="10" HorizontalAlignment="Right" Margin="0,3,0,0"/>
+                        </StackPanel>
+                        
+                        <Border Grid.Column="1" Width="35" Height="35" CornerRadius="20" Background="#2b5278" VerticalAlignment="Top" Margin="0,5,0,0">
+                            <TextBlock Text="Me" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="10"/>
+                        </Border>
+                    </Grid>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="2" Padding="20,10">
+                <Grid ColumnDefinitions="*, Auto">
+                    <Border Grid.Column="0" Background="#40444B" CornerRadius="25">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <TextBox Grid.Column="1" 
+                                     Background="Transparent" 
+                                     BorderThickness="0" 
+                                     Watermark="Type message.."
+                                     Foreground="White"
+                                     CaretBrush="White"
+                                     VerticalContentAlignment="Center"
+                                     Margin="10,0"
+                                     />
+                        </Grid>
+                    </Border>
+                    
+                    <Button Grid.Column="1" Width="45" Height="45" CornerRadius="25" Background="#2b5278" Margin="10,0,0,0" Cursor="Hand">
+                        <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,3"/>
+                    </Button>
+                </Grid>
+            </Border>
+            
+        </Grid>
+    </Grid>
 </Window>
