@@ -1,6 +1,0 @@
-@uchat_server_HostAddress = http://localhost:5248
-
-GET {{uchat_server_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
