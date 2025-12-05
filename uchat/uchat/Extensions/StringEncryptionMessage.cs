@@ -23,11 +23,7 @@ namespace uchat.Extensions
                             streamWriter.Write(simpletext);
                         }
 
-                        return new EncryptedMessage
-                        {
-                            CipheredText = memoryStream.ToArray(),
-                            iv = aes.IV
-                        };
+                        return new EncryptedMessage(memoryStream.ToArray(), aes.IV);
                         
                     }
                 }
@@ -43,7 +39,7 @@ namespace uchat.Extensions
 
                 ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
-                using (MemoryStream memoryStream = new MemoryStream(message.CipheredText))
+                using (MemoryStream memoryStream = new MemoryStream(message.cipheredText))
                 {
                     using (CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
                     {

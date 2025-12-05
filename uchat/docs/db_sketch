@@ -37,7 +37,8 @@ attachment
 id (pk)
 userId 
 chatId
-text
+ciphered_text
+iv (unique) // do not genereate in db
 time_sent
 time_edited
 
