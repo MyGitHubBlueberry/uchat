@@ -10,7 +10,7 @@ namespace uchat_server.Models
         public string? ImageUrl { get; set; }
         public string PasswordHash { get; set; }
         
-        public List<UserChat> ChatSettings { get; set; }
+        public List<dbUserChat> ChatSettings { get; set; }
     }
 
     public class dbUserRelation
@@ -21,11 +21,11 @@ namespace uchat_server.Models
         
         // The one who initiated the action 
         public int SourceUserId { get; set; }
-        public User SourceUser { get; set; }
+        public dbUser SourceUser { get; set; }
 
         // The target
         public int TargetUserId { get; set; }
-        public User TargetUser { get; set; }
+        public dbUser TargetUser { get; set; }
 
         public bool IsBlocked { get; set; } = false;
         public bool IsFriend { get; set; } = false;
@@ -36,8 +36,8 @@ namespace uchat_server.Models
     {
         public int Id { get; set; }
 
-        public List<Message> Messages { get; set; }
-        public List<UserChat> UserSettings { get; set; }
+        public List<dbMessage> Messages { get; set; }
+        public List<dbUserChat> UserSettings { get; set; }
     }
 
     public class DirectChat : dbChat
@@ -46,8 +46,8 @@ namespace uchat_server.Models
         public int UserAId { get; set; }
         public int UserBId { get; set; }
         
-        public User UserA { get; set; }
-        public User UserB { get; set; }
+        public dbUser UserA { get; set; }
+        public dbUser UserB { get; set; }
     }
 
     public class GroupChat : dbChat
@@ -57,7 +57,7 @@ namespace uchat_server.Models
         public string? PictureUrl { get; set; }
         
         public int OwnerId { get; set; }
-        public User Owner { get; set; }
+        public dbUser Owner { get; set; }
     }
 
     // --- USER CHAT SETTINGS ---
@@ -66,10 +66,10 @@ namespace uchat_server.Models
         public int Id { get; set; }
         
         public int UserId { get; set; }
-        public User User { get; set; }
+        public dbUser User { get; set; }
 
         public int ChatId { get; set; }
-        public Chat Chat { get; set; }
+        public dbChat Chat { get; set; }
 
         public bool IsMuted { get; set; } = false;
         
@@ -82,17 +82,17 @@ namespace uchat_server.Models
         public int Id { get; set; }
         
         public int ChatId { get; set; }
-        public Chat Chat { get; set; }
+        public dbChat Chat { get; set; }
 
         public int SenderId { get; set; }
-        public User Sender { get; set; }
+        public dbUser Sender { get; set; }
 
         public string Text { get; set; } 
 
         public DateTime TimeSent { get; set; } = DateTime.UtcNow;
         public DateTime? TimeEdited { get; set; }
 
-        public List<Attachment> Attachments { get; set; }
+        public List<dbAttachment> Attachments { get; set; }
     }
 
     // --- ATTACHMENTS ---
@@ -101,7 +101,7 @@ namespace uchat_server.Models
         public int Id { get; set; }
         
         public int MessageId { get; set; }
-        public Message Message { get; set; }
+        public dbMessage Message { get; set; }
 
         public string Url { get; set; }
     }
