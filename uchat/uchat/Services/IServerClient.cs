@@ -11,8 +11,8 @@ public interface IServerClient
     Task SendMessage(string message, int chatId);
     Task EditMessage(string newMessage, int chatId, int messageId);
     Task DeleteMessage(int chatId, int messageId);
-    Task GetMessages(int chatId, int messageId); // TODO: get models type of message
+    Task<Message> GetMessage(int chatId, int messageId); // TODO: get models type of message
     Task<User> GetUserInfo(int chatId, int messageId);
-    Task GetChats();
+    Task<Chat[]> GetChats();
     void RegisterNotificationCallback(Action<Message> msg);
 }

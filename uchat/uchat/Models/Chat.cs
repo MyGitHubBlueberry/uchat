@@ -1,24 +1,22 @@
-using System;
 using System.Collections.Generic;
 
 namespace uchat.Models;
 
-public record Chat {
-    string id; //db might handle this
-    public Chat(User a, User b) {
-        id = String.Format("{}-{}", a.id, b.id); //todo change to something better
-    }
-}
+public record Chat(
+        int id,
+        User userFrom,
+        User userTo,
+        bool muted,
+        bool blocked
+    );
 
-public record GroupChat(string name) {
-    int id;
-    string name = name;
-    string? picture;
-    string? description;
-    List<int> participants = new List<int>();// by ids 
-    int ownerId;
+public record GroupChat(
+        int id,
+        int ownerId,
+        string name,
+        bool muted,
+        List<User> participants,
+        string? picture,
+        string? description
+    );
 
-    public void Add(int id) {}
-    public void Remove(int id) {}
-    public void Delete() {}
-}

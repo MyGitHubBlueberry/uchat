@@ -1,0 +1,63 @@
+# chat type
+id(pk) //id for private and for group chat
+chat_type (private or group)
+
+# private chat
+id(fk pk) 
+user1Id 
+user2Id 
+where user1 != user2
+where (user1, user2) (unique)
+where user1Id < user2Id 
+
+# group chat
+id(fk pk) 
+ownerId
+picture (null)
+description (null)
+where user1Id < user2Id 
+
+# user chat
+(userId ChatId) 
+muted
+
+# user relations
+(user_1_id user_1_id) 
+is_blocked
+Is_friend
+
+// attachments are video and photo
+// maybe use attachment url
+# media
+chatId
+senderId 
+attachment 
+
+# message
+id (pk)
+userId 
+chatId
+text
+time_sent
+time_edited
+
+# message_attachment
+message_id
+attachment_id
+
+# user
+id (pk)
+name
+image (null)
+
+# do not redeam
+userId (pk fk)
+password
+
+// not for db?
+# notifications 
+id (pk)
+title
+icon
+text
+time
