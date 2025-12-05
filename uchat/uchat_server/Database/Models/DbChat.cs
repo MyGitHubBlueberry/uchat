@@ -7,7 +7,7 @@ namespace uchat_server.Models
     {
         public int Id { get; set; }
 
-        public List<DbMessage> Messages { get; set; }
-        public List<DbUserChat> UserSettings { get; set; }
+        public List<DbMessage> Messages { get; set; } = null!;
+        public List<DbUserChat> UserSettings { get; set; } = null!;
     }
 }

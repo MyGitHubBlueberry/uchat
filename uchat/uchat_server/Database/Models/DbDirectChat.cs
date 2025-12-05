@@ -9,8 +9,8 @@ namespace uchat_server.Models
         public int UserAId { get; set; }
         public int UserBId { get; set; }
         
-        public DbUser UserA { get; set; }
-        public DbUser UserB { get; set; }
+        public DbUser UserA { get; set; } = null!;
+        public DbUser UserB { get; set; } = null!;
     }
 
 }

@@ -11,11 +11,11 @@ namespace uchat_server.Models
         
         // The one who initiated the action 
         public int SourceUserId { get; set; }
-        public DbUser SourceUser { get; set; }
+        public DbUser SourceUser { get; set; } = null!;
 
         // The target
         public int TargetUserId { get; set; }
-        public DbUser TargetUser { get; set; }
+        public DbUser TargetUser { get; set; } = null!;
 
         public bool IsBlocked { get; set; } = false;
         public bool IsFriend { get; set; } = false;
