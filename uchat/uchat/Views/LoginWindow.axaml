@@ -2,8 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:uchat.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="uchat.Views.LoginWindow" Background="#0e1621">
+             x:Class="uchat.Views.LoginWindow"
+             x:DataType="vm:LoginWindowViewModel"
+             Background="#0e1621">
     <Grid>
 
         <Border Background="#17212b" 
@@ -26,7 +29,9 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="USERNAME" FontSize="11" FontWeight="Bold" Foreground="#8E9297"/>
                     <Border Background="#202225" CornerRadius="25" Padding="0">
-                        <TextBox Watermark="Enter your username"
+                        <TextBox Name="UsernameTextBox"
+                                 Text="{Binding Username}"
+                                 Watermark="Enter your username"
                                  Background="Transparent"
                                  BorderThickness="0"
                                  Foreground="White"
@@ -38,7 +43,9 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="PASSWORD" FontSize="11" FontWeight="Bold" Foreground="#8E9297"/>
                     <Border Background="#202225" CornerRadius="25" Padding="0">
-                        <TextBox Watermark="Enter your password"
+                        <TextBox Name="PasswordTextBox"
+                                 Text="{Binding Password}"
+                                 Watermark="Enter your password"
                                  PasswordChar="•"
                                  Background="Transparent"
                                  BorderThickness="0"
@@ -48,7 +55,9 @@
                     </Border>
                 </StackPanel>
 
-                <Button Content="Log In"
+                <Button Name="LoginButton"
+                        Content="Log In"
+                        Click="OnLoginButtonClick"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         Padding="12"

@@ -1,23 +1,22 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 
 namespace uchat.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : UserControl
 {
     public MainWindow()
     {
         InitializeComponent();
-        PointerPressed += OnWindowPointerPressed;
+        PointerPressed += OnControlPointerPressed;
     }
     
-    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnControlPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var element = e.Source as Control;
         if (element is not TextBox)
         {
-            this.FocusManager?.ClearFocus();
+            TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
         }
     }
 }
