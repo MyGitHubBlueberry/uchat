@@ -99,22 +99,23 @@
 
             <Border Grid.Row="2" Padding="20,10">
                 <Grid ColumnDefinitions="*, Auto">
-                    <Border Grid.Column="0" Background="#40444B" CornerRadius="25">
-                        <Grid ColumnDefinitions="Auto, *">
-                            <TextBox Grid.Column="1" 
-                                     Background="Transparent" 
-                                     BorderThickness="0" 
-                                     Watermark="Type message.."
-                                     Foreground="White"
-                                     CaretBrush="White"
-                                     VerticalContentAlignment="Center"
-                                     Margin="10,0"
-                                     />
-                        </Grid>
-                    </Border>
-                    
+                    <TextBox Grid.Column="0"
+                             Background="#40444B"
+                             BorderThickness="0"
+                             Watermark="Type message..."
+                             Foreground="White"
+                             CaretBrush="White"
+                             VerticalContentAlignment="Center"
+                             Margin="0"
+                             CornerRadius="25"
+                             AcceptsReturn="True"
+                             Padding="32,8"
+                             MinHeight="45"
+                             MaxHeight="125"
+                             TextWrapping="Wrap"
+                    />
                     <Button Grid.Column="1" Width="45" Height="45" CornerRadius="25" Background="#2b5278" Margin="10,0,0,0" Cursor="Hand">
-                        <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,3"/>
+                        <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
                     </Button>
                 </Grid>
             </Border>
