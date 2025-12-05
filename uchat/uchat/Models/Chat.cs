@@ -12,7 +12,7 @@ public record Chat(
 
 public record GroupChat(
         int id,
-        int ownerId,
+        User owner,
         string name,
         bool muted,
         List<User> participants,

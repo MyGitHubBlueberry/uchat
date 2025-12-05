@@ -2,4 +2,10 @@ using System;
 
 namespace uchat.Models;
 
-public record Message(int id, string text, DateTime timeSent, int userId, int chatId);
+public record Message(
+        int id,
+        User user,
+        int chatId,
+        EncryptedMessage encriptedText,
+        DateTime timeSent
+    );
