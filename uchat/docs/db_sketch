@@ -3,26 +3,25 @@ id(pk) //id for private and for group chat
 chat_type (private or group)
 
 # private chat
-id(fk pk) 
-user1Id 
-user2Id 
+id(fk pk)
+user1Id
+user2Id
 where user1 != user2
 where (user1, user2) (unique)
-where user1Id < user2Id 
+where user1Id < user2Id
 
 # group chat
-id(fk pk) 
+id(fk pk)
 ownerId
 picture (null)
 description (null)
-where user1Id < user2Id 
 
 # user chat
-(userId ChatId) 
+(userId ChatId)
 muted
 
 # user relations
-(user_1_id user_1_id) 
+(user_1_id user_2_id)
 is_blocked
 Is_friend
 
@@ -30,12 +29,12 @@ Is_friend
 // maybe use attachment url
 # media
 chatId
-senderId 
-attachment 
+senderId
+attachment
 
 # message
 id (pk)
-userId 
+userId
 chatId
 ciphered_text
 iv (unique) // do not genereate in db
@@ -49,14 +48,11 @@ attachment_id
 # user
 id (pk)
 name
-image (null)
-
-# do not redeam
-userId (pk fk)
+image (optional)
 password
 
 // not for db?
-# notifications 
+# notifications
 id (pk)
 title
 icon
