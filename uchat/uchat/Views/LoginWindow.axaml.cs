@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using uchat.ViewModels;
 
@@ -13,6 +14,16 @@ public partial class LoginWindow : UserControl
     {
         InitializeComponent();
         DataContext = new LoginWindowViewModel();
+        PointerPressed += OnControlPointerPressed;
+    }
+    
+    private void OnControlPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var element = e.Source as Control;
+        if (element is not TextBox)
+        {
+            TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
+        }
     }
     
     private void OnLoginButtonClick(object? sender, RoutedEventArgs e)

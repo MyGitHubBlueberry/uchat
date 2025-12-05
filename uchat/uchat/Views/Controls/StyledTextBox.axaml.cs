@@ -4,7 +4,7 @@ using Avalonia.Media;
 
 namespace uchat.Views.Controls;
 
-public partial class StyledTextBox : UserControl
+public partial class StyledTextBox : StyledInputBase
 {
     public static readonly StyledProperty<string> TextProperty =
         AvaloniaProperty.Register<StyledTextBox, string>(nameof(Text), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
@@ -14,18 +14,6 @@ public partial class StyledTextBox : UserControl
 
     public static readonly StyledProperty<char?> PasswordCharProperty =
         AvaloniaProperty.Register<StyledTextBox, char?>(nameof(PasswordChar));
-
-    public static readonly StyledProperty<IBrush?> BackgroundColorProperty =
-        AvaloniaProperty.Register<StyledTextBox, IBrush?>(nameof(BackgroundColor), Brush.Parse("#202225"));
-
-    public static readonly StyledProperty<IBrush?> CaretColorProperty =
-        AvaloniaProperty.Register<StyledTextBox, IBrush?>(nameof(CaretColor), Brush.Parse("#EB459E"));
-
-    public static readonly StyledProperty<double> CornerRadiusValueProperty =
-        AvaloniaProperty.Register<StyledTextBox, double>(nameof(CornerRadiusValue), 25.0);
-
-    public static readonly StyledProperty<Thickness> PaddingValueProperty =
-        AvaloniaProperty.Register<StyledTextBox, Thickness>(nameof(PaddingValue), new Thickness(15, 12));
 
     public static readonly StyledProperty<bool> AcceptsReturnProperty =
         AvaloniaProperty.Register<StyledTextBox, bool>(nameof(AcceptsReturn));
@@ -38,6 +26,8 @@ public partial class StyledTextBox : UserControl
 
     public static readonly StyledProperty<double> MaxHeightValueProperty =
         AvaloniaProperty.Register<StyledTextBox, double>(nameof(MaxHeightValue), double.NaN);
+
+    private TextBox? _inputBox;
 
     public string Text
     {
@@ -55,30 +45,6 @@ public partial class StyledTextBox : UserControl
     {
         get => GetValue(PasswordCharProperty);
         set => SetValue(PasswordCharProperty, value);
-    }
-
-    public IBrush? BackgroundColor
-    {
-        get => GetValue(BackgroundColorProperty);
-        set => SetValue(BackgroundColorProperty, value);
-    }
-
-    public IBrush? CaretColor
-    {
-        get => GetValue(CaretColorProperty);
-        set => SetValue(CaretColorProperty, value);
-    }
-
-    public double CornerRadiusValue
-    {
-        get => GetValue(CornerRadiusValueProperty);
-        set => SetValue(CornerRadiusValueProperty, value);
-    }
-
-    public Thickness PaddingValue
-    {
-        get => GetValue(PaddingValueProperty);
-        set => SetValue(PaddingValueProperty, value);
     }
 
     public bool AcceptsReturn
@@ -108,7 +74,28 @@ public partial class StyledTextBox : UserControl
     public StyledTextBox()
     {
         InitializeComponent();
+        InitializeInputBox();
+    }
+
+    private void InitializeInputBox()
+    {
+        _inputBox = new TextBox
+        {
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Foreground = Brushes.White
+        };
+
+        SetInputControl(_inputBox);
         UpdateProperties();
+
+        _inputBox.PropertyChanged += (s, e) =>
+        {
+            if (e.Property == TextBox.TextProperty)
+            {
+                Text = _inputBox.Text ?? string.Empty;
+            }
+        };
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -118,10 +105,6 @@ public partial class StyledTextBox : UserControl
         if (change.Property == TextProperty ||
             change.Property == WatermarkProperty ||
             change.Property == PasswordCharProperty ||
-            change.Property == BackgroundColorProperty ||
-            change.Property == CaretColorProperty ||
-            change.Property == CornerRadiusValueProperty ||
-            change.Property == PaddingValueProperty ||
             change.Property == AcceptsReturnProperty ||
             change.Property == TextWrappingProperty ||
             change.Property == MinHeightValueProperty ||
@@ -131,33 +114,28 @@ public partial class StyledTextBox : UserControl
         }
     }
 
+    protected override void UpdateStyles()
+    {
+        base.UpdateStyles();
+        UpdateProperties();
+    }
+
     private void UpdateProperties()
     {
-        if (InputBox == null || Container == null) return;
+        if (_inputBox == null) return;
 
-        InputBox.Text = Text;
-        InputBox.Watermark = Watermark;
-        InputBox.PasswordChar = PasswordChar ?? default;
-        InputBox.CaretBrush = CaretColor;
-        InputBox.Padding = PaddingValue;
-        InputBox.AcceptsReturn = AcceptsReturn;
-        InputBox.TextWrapping = TextWrapping;
+        _inputBox.Text = Text;
+        _inputBox.Watermark = Watermark;
+        _inputBox.PasswordChar = PasswordChar ?? default;
+        _inputBox.CaretBrush = CaretColor;
+        _inputBox.Padding = PaddingValue;
+        _inputBox.AcceptsReturn = AcceptsReturn;
+        _inputBox.TextWrapping = TextWrapping;
 
         if (!double.IsNaN(MinHeightValue))
-            InputBox.MinHeight = MinHeightValue;
+            _inputBox.MinHeight = MinHeightValue;
         
         if (!double.IsNaN(MaxHeightValue))
-            InputBox.MaxHeight = MaxHeightValue;
-
-        Container.Background = BackgroundColor;
-        Container.CornerRadius = new CornerRadius(CornerRadiusValue);
-
-        InputBox.PropertyChanged += (s, e) =>
-        {
-            if (e.Property == TextBox.TextProperty)
-            {
-                Text = InputBox.Text ?? string.Empty;
-            }
-        };
+            _inputBox.MaxHeight = MaxHeightValue;
     }
 }

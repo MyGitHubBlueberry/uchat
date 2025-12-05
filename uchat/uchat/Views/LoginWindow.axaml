@@ -31,15 +31,16 @@
                     <TextBlock Text="USERNAME" FontSize="11" FontWeight="Bold" Foreground="#8E9297"/>
                     <controls:StyledTextBox Name="UsernameTextBox"
                                             Text="{Binding Username}"
-                                            Watermark="Enter your username"/>
+                                            Watermark="Enter your username"
+                                            CornerRadiusValue="25"/>
                 </StackPanel>
 
                 <StackPanel Spacing="8">
                     <TextBlock Text="PASSWORD" FontSize="11" FontWeight="Bold" Foreground="#8E9297"/>
-                    <controls:StyledTextBox Name="PasswordTextBox"
-                                            Text="{Binding Password}"
-                                            Watermark="Enter your password"
-                                            PasswordChar="•"/>
+                    <controls:StyledPasswordBox Name="PasswordTextBox"
+                                                Password="{Binding Password}"
+                                                Watermark="Enter your password"
+                                                CornerRadiusValue="25"/>
                 </StackPanel>
 
                 <Button Name="LoginButton"

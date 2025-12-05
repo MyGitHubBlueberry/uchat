@@ -97,7 +97,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <Border Grid.Row="2" Padding="20,10">
+            <Border Grid.Row="2" Padding="20,10" VerticalAlignment="Center">
                 <Grid ColumnDefinitions="*, Auto">
                     <controls:StyledTextBox Grid.Column="0"
                                             Watermark="Type message..."
@@ -105,6 +105,8 @@
                                             CaretColor="White"
                                             PaddingValue="32,8"
                                             MinHeightValue="45"
+                                            VerticalAlignment="Center"
+                                            VerticalContentAlignment="Center"
                                             MaxHeightValue="125"
                                             AcceptsReturn="True"
                                             TextWrapping="Wrap"/>
