@@ -3,6 +3,7 @@
              xmlns:vm="using:uchat.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:uchat.Views.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="uchat.Views.MainWindow"
              x:DataType="vm:MainWindowViewModel"
@@ -98,21 +99,15 @@
 
             <Border Grid.Row="2" Padding="20,10">
                 <Grid ColumnDefinitions="*, Auto">
-                    <TextBox Grid.Column="0"
-                             Background="#40444B"
-                             BorderThickness="0"
-                             Watermark="Type message..."
-                             Foreground="White"
-                             CaretBrush="White"
-                             VerticalContentAlignment="Center"
-                             Margin="0"
-                             CornerRadius="25"
-                             AcceptsReturn="True"
-                             Padding="32,8"
-                             MinHeight="45"
-                             MaxHeight="125"
-                             TextWrapping="Wrap"
-                    />
+                    <controls:StyledTextBox Grid.Column="0"
+                                            Watermark="Type message..."
+                                            BackgroundColor="#40444B"
+                                            CaretColor="White"
+                                            PaddingValue="32,8"
+                                            MinHeightValue="45"
+                                            MaxHeightValue="125"
+                                            AcceptsReturn="True"
+                                            TextWrapping="Wrap"/>
                     <Button Grid.Column="1" Width="45" Height="45" CornerRadius="25" Background="#2b5278" Margin="10,0,0,0" Cursor="Hand">
                         <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
                     </Button>

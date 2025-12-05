@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="uchat.Views.Controls.StyledTextBox">
+    
+    <Border Name="Container" 
+            Background="#202225" 
+            CornerRadius="25">
+        <TextBox Name="InputBox"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="White"
+                 Padding="15,12"
+                 CaretBrush="#EB459E"/>
+    </Border>
+    
+</UserControl>
