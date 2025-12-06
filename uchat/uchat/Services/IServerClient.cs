@@ -1,6 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using uchat.Models;
+using SharedLibrary.Models;
 
 namespace uchat;
 
@@ -8,10 +9,10 @@ public interface IServerClient
 {
     Task UserRegistration(string username, string password); //TODO: posible more arguments
     Task<bool> UserLogin(string  username, string password);
-    Task SendMessage(string message, int chatId);
+    Task SendMessage(Message message, int chatId);
     Task EditMessage(string newMessage, int chatId, int messageId);
     Task DeleteMessage(int chatId, int messageId);
-    Task<Message> GetMessage(int chatId, int messageId); // TODO: get models type of message
+    Task<List<Message>> GetMessages(int chatId);
     Task<User> GetUserInfo(int chatId, int messageId);
     Task<Chat[]> GetChats();
     void RegisterNotificationCallback(Action<Message> msg);

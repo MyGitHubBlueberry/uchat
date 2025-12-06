@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using System;
-
-namespace uchat.Models;
+namespace SharedLibrary.Models;
 
 public record User (
         string name,

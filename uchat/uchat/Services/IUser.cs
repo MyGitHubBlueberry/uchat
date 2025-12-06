@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using uchat.Models;
+using SharedLibrary.Models;
 
 namespace uchat;
 

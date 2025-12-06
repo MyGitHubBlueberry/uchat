@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace uchat.Models;
+namespace SharedLibrary.Models;
 
 public record Chat(
         int id,
