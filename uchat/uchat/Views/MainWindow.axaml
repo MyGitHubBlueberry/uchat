@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:controls="using:uchat.Views.Controls"
+             xmlns:converters="using:uchat.Converters"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="uchat.Views.MainWindow"
              x:DataType="vm:MainWindowViewModel"
@@ -59,66 +60,102 @@
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="1" Padding="20">
-                <!-- our styles -->
-                <!--<StackPanel Spacing="15">
-                    <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
-                        <Border Grid.RowSpan="2" Width="35" Height="35" CornerRadius="20" Background="#EB459E" VerticalAlignment="Top" Margin="0,5,0,0">
-                            <TextBlock Text="A" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="12"/>
-                        </Border>
-                        
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,2">
-                                <TextBlock Text="Nitita" Foreground="#EB459E" FontWeight="Bold" FontSize="13"/>
-                                <TextBlock Text="9:00 AM" Foreground="#72767D" FontSize="10" VerticalAlignment="Bottom"/>
-                            </StackPanel>
-                            
-                            <Border Background="#2F3136" CornerRadius="0,12,12,12" Padding="12">
-                                <TextBlock Text="Hello Illia" 
-                                           Foreground="#DCDDDE" TextWrapping="Wrap" LineHeight="20"/>
-                            </Border>
-                        </StackPanel>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
-                         <StackPanel Grid.Column="0" Margin="0,0,10,0" HorizontalAlignment="Right">
-                            <Border Background="#2b5278" CornerRadius="12,12,0,12" Padding="12">
-                                <TextBlock Text="Hi mann" 
-                                           Foreground="White" TextWrapping="Wrap" LineHeight="20"/>
-                            </Border>
-                             <TextBlock Text="10:43 PM" Foreground="#72767D" FontSize="10" HorizontalAlignment="Right" Margin="0,3,0,0"/>
-                        </StackPanel>
-                        
-                        <Border Grid.Column="1" Width="35" Height="35" CornerRadius="20" Background="#2b5278" VerticalAlignment="Top" Margin="0,5,0,0">
-                            <TextBlock Text="Me" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="10"/>
-                        </Border>
-                    </Grid>
-
-                </StackPanel>-->
-                
-                <ItemsControl ItemsSource="{Binding Messages}">
+            <ScrollViewer Grid.Row="1" 
+                          Name="MessageScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Messages}" Margin="20">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,5">
-                                <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
+                            <Grid Margin="0,8,0,8">
+                                <!-- Messages from others (left aligned) -->
+                                <Grid ColumnDefinitions="Auto, *"
+                                      IsVisible="{Binding !IsFromCurrentUser}">
                                     
-                                    <Border Grid.RowSpan="2" Width="35" Height="35" CornerRadius="20" Background="#EB459E" VerticalAlignment="Top" Margin="0,5,10,0">
-                                        <TextBlock Text="{Binding SenderName[0]}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontSize="12"/>
+                                    <Border Width="40" Height="40" 
+                                            CornerRadius="20" 
+                                            Background="#5865F2" 
+                                            VerticalAlignment="Top" 
+                                            Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding SenderName[0]}"
+                                                   VerticalAlignment="Center" 
+                                                   HorizontalAlignment="Center" 
+                                                   Foreground="White" 
+                                                   FontWeight="SemiBold"
+                                                   FontSize="14"/>
                                     </Border>
 
-                                    <StackPanel Grid.Column="1">
-                                        <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,2">
-                                            <TextBlock Text="{Binding SenderName}" Foreground="White" FontWeight="Bold" FontSize="13"/>
-                                            <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:t}'}" Foreground="White" FontSize="10" VerticalAlignment="Bottom"/>
-                                        </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="4" MaxWidth="500">
+                                        <TextBlock Text="{Binding SenderName}" 
+                                                   Foreground="#DCDDDE" 
+                                                   FontWeight="SemiBold" 
+                                                   FontSize="14"
+                                                   Margin="0,0,0,2"/>
 
-                                        <Border Background="Blue" Padding="12">
+                                        <Border Background="#2F3136" 
+                                                CornerRadius="0,12,12,12" 
+                                                Padding="12"
+                                                HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding Content}" 
+                                                       Foreground="#DCDDDE" 
+                                                       TextWrapping="Wrap" 
+                                                       LineHeight="22"
+                                                       FontSize="14"/>
+                                        </Border>
+                                        
+                                        <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}" 
+                                                   Foreground="#72767D" 
+                                                   FontSize="11"
+                                                   Margin="4,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Messages from current user (right aligned) -->
+                                <Grid ColumnDefinitions="*, Auto"
+                                      IsVisible="{Binding IsFromCurrentUser}"
+                                      HorizontalAlignment="Right">
+                                    
+                                    <StackPanel Grid.Column="0" 
+                                                Spacing="4" 
+                                                HorizontalAlignment="Right"
+                                                MaxWidth="500"
+                                                Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding SenderName}" 
+                                                   Foreground="#DCDDDE" 
+                                                   FontWeight="SemiBold" 
+                                                   FontSize="14"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,0,0,2"/>
+
+                                        <Border Background="#2b5278"
+                                                CornerRadius="12,12,0,12"
+                                                Padding="12">
                                             <TextBlock Text="{Binding Content}" 
                                                        Foreground="White" 
                                                        TextWrapping="Wrap" 
-                                                       LineHeight="20"/>
+                                                       LineHeight="22"
+                                                       FontSize="14"/>
                                         </Border>
+                                        
+                                        <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}" 
+                                                   Foreground="#72767D" 
+                                                   FontSize="11"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,2,4,0"/>
                                     </StackPanel>
+
+                                    <Border Grid.Column="1" 
+                                            Width="40" Height="40" 
+                                            CornerRadius="20" 
+                                            Background="#2b5278" 
+                                            VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding SenderName[0]}"
+                                                   VerticalAlignment="Center" 
+                                                   HorizontalAlignment="Center" 
+                                                   Foreground="White" 
+                                                   FontWeight="SemiBold"
+                                                   FontSize="14"/>
+                                    </Border>
                                 </Grid>
                             </Grid>
                         </DataTemplate>
@@ -131,14 +168,10 @@
                     <controls:StyledTextBox Grid.Column="0"
                                             Watermark="Type message..."
                                             BackgroundColor="#40444B"
-                                            CaretColor="White"
-                                            PaddingValue="32,8"
-                                            MinHeightValue="45"
+                                            PaddingValue="16,12"
                                             VerticalAlignment="Center"
-                                            VerticalContentAlignment="Center"
-                                            MaxHeightValue="125"
-                                            AcceptsReturn="True"
-                                            TextWrapping="Wrap" Text="{Binding MessageText}"/>
+                                            Text="{Binding MessageText}"
+                                            EnterCommand="{Binding SendCommand}"/>
                     <Button Grid.Column="1" Width="45" Height="45" CornerRadius="25" Background="#2b5278" Margin="10,0,0,0" Cursor="Hand" Command="{Binding SendCommand}">
                         <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
                     </Button>

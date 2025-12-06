@@ -1,5 +1,7 @@
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 
 namespace uchat.Views.Controls;
@@ -15,19 +17,8 @@ public partial class StyledTextBox : StyledInputBase
     public static readonly StyledProperty<char?> PasswordCharProperty =
         AvaloniaProperty.Register<StyledTextBox, char?>(nameof(PasswordChar));
 
-    public static readonly StyledProperty<bool> AcceptsReturnProperty =
-        AvaloniaProperty.Register<StyledTextBox, bool>(nameof(AcceptsReturn));
-
-    public static readonly StyledProperty<TextWrapping> TextWrappingProperty =
-        AvaloniaProperty.Register<StyledTextBox, TextWrapping>(nameof(TextWrapping));
-
-    public static readonly StyledProperty<double> MinHeightValueProperty =
-        AvaloniaProperty.Register<StyledTextBox, double>(nameof(MinHeightValue), double.NaN);
-
-    public static readonly StyledProperty<double> MaxHeightValueProperty =
-        AvaloniaProperty.Register<StyledTextBox, double>(nameof(MaxHeightValue), double.NaN);
-
-    private TextBox? _inputBox;
+    public static readonly StyledProperty<ICommand?> EnterCommandProperty =
+        AvaloniaProperty.Register<StyledTextBox, ICommand?>(nameof(EnterCommand));
 
     public string Text
     {
@@ -47,28 +38,10 @@ public partial class StyledTextBox : StyledInputBase
         set => SetValue(PasswordCharProperty, value);
     }
 
-    public bool AcceptsReturn
+    public ICommand? EnterCommand
     {
-        get => GetValue(AcceptsReturnProperty);
-        set => SetValue(AcceptsReturnProperty, value);
-    }
-
-    public TextWrapping TextWrapping
-    {
-        get => GetValue(TextWrappingProperty);
-        set => SetValue(TextWrappingProperty, value);
-    }
-
-    public double MinHeightValue
-    {
-        get => GetValue(MinHeightValueProperty);
-        set => SetValue(MinHeightValueProperty, value);
-    }
-
-    public double MaxHeightValue
-    {
-        get => GetValue(MaxHeightValueProperty);
-        set => SetValue(MaxHeightValueProperty, value);
+        get => GetValue(EnterCommandProperty);
+        set => SetValue(EnterCommandProperty, value);
     }
 
     public StyledTextBox()
@@ -79,23 +52,35 @@ public partial class StyledTextBox : StyledInputBase
 
     private void InitializeInputBox()
     {
-        _inputBox = new TextBox
+        var inputBox = new TextBox
         {
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
-            Foreground = Brushes.White
+            Foreground = Brushes.White,
+            AcceptsReturn = false,
+            TextWrapping = TextWrapping.NoWrap
         };
 
-        SetInputControl(_inputBox);
-        UpdateProperties();
+        SetInputControl(inputBox);
 
-        _inputBox.PropertyChanged += (s, e) =>
+        inputBox.PropertyChanged += (s, e) =>
         {
             if (e.Property == TextBox.TextProperty)
             {
-                Text = _inputBox.Text ?? string.Empty;
+                Text = inputBox.Text ?? string.Empty;
             }
         };
+
+        inputBox.KeyDown += (s, e) =>
+        {
+            if (e.Key == Key.Enter && EnterCommand?.CanExecute(null) == true)
+            {
+                EnterCommand.Execute(null);
+                e.Handled = true;
+            }
+        };
+
+        UpdateProperties();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -104,11 +89,7 @@ public partial class StyledTextBox : StyledInputBase
 
         if (change.Property == TextProperty ||
             change.Property == WatermarkProperty ||
-            change.Property == PasswordCharProperty ||
-            change.Property == AcceptsReturnProperty ||
-            change.Property == TextWrappingProperty ||
-            change.Property == MinHeightValueProperty ||
-            change.Property == MaxHeightValueProperty)
+            change.Property == PasswordCharProperty)
         {
             UpdateProperties();
         }
@@ -122,20 +103,11 @@ public partial class StyledTextBox : StyledInputBase
 
     private void UpdateProperties()
     {
-        if (_inputBox == null) return;
+        if (InputControl == null) return;
 
-        _inputBox.Text = Text;
-        _inputBox.Watermark = Watermark;
-        _inputBox.PasswordChar = PasswordChar ?? default;
-        _inputBox.CaretBrush = CaretColor;
-        _inputBox.Padding = PaddingValue;
-        _inputBox.AcceptsReturn = AcceptsReturn;
-        _inputBox.TextWrapping = TextWrapping;
-
-        if (!double.IsNaN(MinHeightValue))
-            _inputBox.MinHeight = MinHeightValue;
-        
-        if (!double.IsNaN(MaxHeightValue))
-            _inputBox.MaxHeight = MaxHeightValue;
+        InputControl.Text = Text;
+        InputControl.Watermark = Watermark;
+        InputControl.PasswordChar = PasswordChar ?? default;
+        InputControl.CaretBrush = Brushes.White;
     }
 }

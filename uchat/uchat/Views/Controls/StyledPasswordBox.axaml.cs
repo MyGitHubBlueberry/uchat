@@ -15,8 +15,6 @@ public partial class StyledPasswordBox : StyledInputBase
     public static readonly StyledProperty<char> PasswordCharProperty =
         AvaloniaProperty.Register<StyledPasswordBox, char>(nameof(PasswordChar), '●');
 
-    private TextBox? _inputBox;
-
     public string Password
     {
         get => GetValue(PasswordProperty);
@@ -43,24 +41,26 @@ public partial class StyledPasswordBox : StyledInputBase
 
     private void InitializeInputBox()
     {
-        _inputBox = new TextBox
+        var inputBox = new TextBox
         {
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             Foreground = Brushes.White,
-            PasswordChar = PasswordChar
+            PasswordChar = PasswordChar,
+            CaretBrush = Brushes.White
         };
 
-        SetInputControl(_inputBox);
-        UpdateProperties();
+        SetInputControl(inputBox);
 
-        _inputBox.PropertyChanged += (s, e) =>
+        inputBox.PropertyChanged += (s, e) =>
         {
             if (e.Property == TextBox.TextProperty)
             {
-                Password = _inputBox.Text ?? string.Empty;
+                Password = inputBox.Text ?? string.Empty;
             }
         };
+
+        UpdateProperties();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -83,12 +83,10 @@ public partial class StyledPasswordBox : StyledInputBase
 
     private void UpdateProperties()
     {
-        if (_inputBox == null) return;
+        if (InputControl == null) return;
 
-        _inputBox.Text = Password;
-        _inputBox.Watermark = Watermark;
-        _inputBox.PasswordChar = PasswordChar;
-        _inputBox.CaretBrush = CaretColor;
-        _inputBox.Padding = PaddingValue;
+        InputControl.Text = Password;
+        InputControl.Watermark = Watermark;
+        InputControl.PasswordChar = PasswordChar;
     }
 }

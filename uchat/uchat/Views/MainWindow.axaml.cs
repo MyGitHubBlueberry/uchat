@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using uchat.ViewModels;
 
 namespace uchat.Views;
 
@@ -9,6 +10,22 @@ public partial class MainWindow : UserControl
     {
         InitializeComponent();
         PointerPressed += OnControlPointerPressed;
+        
+        DataContextChanged += (s, e) =>
+        {
+            if (DataContext is MainWindowViewModel viewModel)
+            {
+                viewModel.PropertyChanged += (sender, args) =>
+                {
+                    if (args.PropertyName == nameof(MainWindowViewModel.ShouldScrollToBottom) && 
+                        viewModel.ShouldScrollToBottom)
+                    {
+                        ScrollToBottom();
+                        viewModel.ShouldScrollToBottom = false;
+                    }
+                };
+            }
+        };
     }
     
     private void OnControlPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -18,5 +35,10 @@ public partial class MainWindow : UserControl
         {
             TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
         }
+    }
+
+    private void ScrollToBottom()
+    {
+        MessageScrollViewer?.ScrollToEnd();
     }
 }

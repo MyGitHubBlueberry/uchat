@@ -4,6 +4,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using SharedLibrary.Models;
 
 namespace uchat.ViewModels;
@@ -13,11 +14,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IServerClient _serverClient;
     
     public ObservableCollection<Chat> Chats { get; } = new();
-    public ObservableCollection<Message> Messages { get; } = new(); 
+    public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
     
     [ObservableProperty] private Chat? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
     [ObservableProperty] private string _userName = "User" + new Random().Next(1, 100);
+    [ObservableProperty] private bool _shouldScrollToBottom;
     
     public MainWindowViewModel()
     {
@@ -25,7 +27,22 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _serverClient.RegisterNotificationCallback(OnMessageReceived);
 
+        Messages.CollectionChanged += OnMessagesCollectionChanged;
+
         _ = InitializeAsync();
+    }
+
+    private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Add)
+        {
+            ShouldScrollToBottom = true;
+        }
+    }
+
+    private MessageViewModel CreateMessageViewModel(Message msg)
+    {
+        return new MessageViewModel(msg, UserName);
     }
     
     private async Task InitializeAsync()
@@ -52,9 +69,9 @@ public partial class MainWindowViewModel : ViewModelBase
             Timestamp = DateTime.UtcNow
         };
 
-        await _serverClient.SendMessage(msg, SelectedChat.id);
-
         MessageText = "";
+        
+        await _serverClient.SendMessage(msg, SelectedChat.id);
     }
     
     [RelayCommand]
@@ -81,15 +98,17 @@ public partial class MainWindowViewModel : ViewModelBase
         
         foreach (var msg in history)
         {
-            Messages.Add(msg);
+            Messages.Add(CreateMessageViewModel(msg));
         }
+        
+        ShouldScrollToBottom = true;
     }
     
     private void OnMessageReceived(Message msg)
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            Messages.Add(msg);
+            Messages.Add(CreateMessageViewModel(msg));
         });
     }
 }
