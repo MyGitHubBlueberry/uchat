@@ -25,6 +25,10 @@
                                FontWeight="Bold" 
                                HorizontalAlignment="Center" 
                                Foreground="White"/>
+                    <TextBlock Text="We are glad to see you again!" 
+                               FontSize="14" 
+                               HorizontalAlignment="Center" 
+                               Foreground="#B9BBBE"/>
                 </StackPanel>
 
                 <StackPanel Spacing="8">
@@ -58,7 +62,7 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="5">
                     <TextBlock Text="Need an account?" Foreground="#B9BBBE" FontSize="12"/>
-                    <TextBlock Text="Register" Foreground="#EB459E" FontWeight="Bold" Cursor="Hand" FontSize="12"/>
+                    <TextBlock Name="RegisterLink" Text="Register" Foreground="#EB459E" FontWeight="Bold" Cursor="Hand" FontSize="12" PointerPressed="OnRegisterLinkPressed"/>
                 </StackPanel>
 
             </StackPanel>

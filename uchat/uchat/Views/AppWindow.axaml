@@ -11,6 +11,10 @@
         CanResize="False"
         WindowStartupLocation="CenterScreen">
     
-    <ContentControl x:Name="ContentArea" />
+    <TransitioningContentControl x:Name="ContentArea">
+        <TransitioningContentControl.PageTransition>
+            <CrossFade Duration="0:0:0.3" />
+        </TransitioningContentControl.PageTransition>
+    </TransitioningContentControl>
     
 </Window>

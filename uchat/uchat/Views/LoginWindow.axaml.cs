@@ -9,6 +9,7 @@ namespace uchat.Views;
 public partial class LoginWindow : UserControl
 {
     public event EventHandler<string>? LoginSuccessful;
+    public event EventHandler? NavigateToRegister;
 
     public LoginWindow()
     {
@@ -33,5 +34,10 @@ public partial class LoginWindow : UserControl
         {
             LoginSuccessful?.Invoke(this, viewModel.Username);
         }
+    }
+
+    private void OnRegisterLinkPressed(object? sender, PointerPressedEventArgs e)
+    {
+        NavigateToRegister?.Invoke(this, EventArgs.Empty);
     }
 }
