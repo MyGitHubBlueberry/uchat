@@ -2,10 +2,28 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="uchat.App"
              xmlns:local="using:uchat"
+             xmlns:vm="using:uchat.ViewModels"
+             xmlns:views="using:uchat.Views"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
+        <DataTemplate DataType="{x:Type vm:LoaderViewModel}">
+            <views:LoaderView/>
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type vm:LoginWindowViewModel}">
+            <views:LoginWindow/>
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type vm:RegistrationWindowViewModel}">
+            <views:RegistrationWindow/>
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type vm:MainWindowViewModel}">
+            <views:MainWindow/>
+        </DataTemplate>
+        
         <local:ViewLocator/>
     </Application.DataTemplates>
   

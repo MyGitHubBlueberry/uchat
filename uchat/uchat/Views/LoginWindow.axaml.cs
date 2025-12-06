@@ -1,20 +1,13 @@
-using System;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
-using uchat.ViewModels;
 
 namespace uchat.Views;
 
 public partial class LoginWindow : UserControl
 {
-    public event EventHandler<string>? LoginSuccessful;
-    public event EventHandler? NavigateToRegister;
-
     public LoginWindow()
     {
         InitializeComponent();
-        DataContext = new LoginWindowViewModel();
         PointerPressed += OnControlPointerPressed;
     }
     
@@ -25,19 +18,5 @@ public partial class LoginWindow : UserControl
         {
             TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
         }
-    }
-    
-    private void OnLoginButtonClick(object? sender, RoutedEventArgs e)
-    {
-        var viewModel = DataContext as LoginWindowViewModel;
-        if (viewModel != null && viewModel.ValidateLogin())
-        {
-            LoginSuccessful?.Invoke(this, viewModel.Username);
-        }
-    }
-
-    private void OnRegisterLinkPressed(object? sender, PointerPressedEventArgs e)
-    {
-        NavigateToRegister?.Invoke(this, EventArgs.Empty);
     }
 }

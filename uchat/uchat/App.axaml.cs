@@ -6,11 +6,14 @@ using System.Linq;
 using Avalonia.Markup.Xaml;
 using uchat.ViewModels;
 using uchat.Views;
+using System;
 
 namespace uchat;
 
 public partial class App : Application
 {
+    public static IServiceProvider? Services { get; set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -21,6 +24,12 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             DisableAvaloniaDataAnnotationValidation();
+            
+            if (Services == null)
+            {
+                throw new InvalidOperationException("Services not configured. Ensure Program.Main sets App.Services.");
+            }
+
             desktop.MainWindow = new AppWindow();
         }
 

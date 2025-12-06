@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:uchat.ViewModels"
+             x:Class="uchat.Views.LoaderView"
+             x:DataType="vm:LoaderViewModel">
+    
+    <Grid Background="#1E1E1E">
+        <StackPanel HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Spacing="20">
+            <Ellipse Width="60" Height="60"
+                     Stroke="#007ACC"
+                     StrokeThickness="4"
+                     StrokeDashArray="6,4"
+                     Opacity="0.8"/>
+            <TextBlock Text="Loading..."
+                       FontSize="18"
+                       FontWeight="Light"
+                       Foreground="#CCCCCC"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+    
+</UserControl>

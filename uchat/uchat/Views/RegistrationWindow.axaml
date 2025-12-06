@@ -6,7 +6,7 @@
              xmlns:controls="using:uchat.Views.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="uchat.Views.RegistrationWindow"
-             x:DataType="vm:LoginWindowViewModel"
+             x:DataType="vm:RegistrationWindowViewModel"
              Background="#0e1621">
     <Grid>
 
@@ -57,15 +57,23 @@
                                    FontWeight="Bold" 
                                    Foreground="#8E9297"/>
                         <controls:StyledPasswordBox Name="ConfirmPasswordTextBox"
-                                                    Password="{Binding Password}" 
+                                                    Password="{Binding ConfirmPassword}" 
                                                     Watermark="Repeat password"
                                                     CornerRadiusValue="25"/>
                     </StackPanel>
                 </Grid>
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#F04747"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           TextWrapping="Wrap"
+                           MaxWidth="520"/>
                 
-                <Button Name="LoginButton"
+                <Button Name="RegisterButton"
                         Width="160"
                         Content="Sign Up"
+                        Command="{Binding RegisterCommand}"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         Padding="12"
@@ -78,7 +86,17 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="5">
                     <TextBlock Text="Already have an account?" Foreground="#B9BBBE" FontSize="12"/>
-                    <TextBlock Name="LoginLink" Text="Log In" Foreground="#EB459E" FontWeight="Bold" Cursor="Hand" FontSize="12" PointerPressed="OnLoginLinkPressed"/>
+                    <Button Name="LoginLink" 
+                            Content="Log In" 
+                            Foreground="#EB459E" 
+                            FontWeight="Bold" 
+                            Cursor="Hand" 
+                            FontSize="12"
+                            Command="{Binding NavigateToLoginCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0">
+                    </Button>
                 </StackPanel>
 
             </StackPanel>

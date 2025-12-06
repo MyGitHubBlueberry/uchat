@@ -47,9 +47,18 @@
                                                 CornerRadiusValue="25"/>
                 </StackPanel>
 
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#F04747"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           TextWrapping="Wrap"
+                           MaxWidth="280"/>
+
                 <Button Name="LoginButton"
                         Content="Log In"
-                        Click="OnLoginButtonClick"
+                        Command="{Binding LoginCommand}"
+                        IsEnabled="{Binding !IsLoggingIn}"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         Padding="12"
@@ -62,7 +71,17 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="5">
                     <TextBlock Text="Need an account?" Foreground="#B9BBBE" FontSize="12"/>
-                    <TextBlock Name="RegisterLink" Text="Register" Foreground="#EB459E" FontWeight="Bold" Cursor="Hand" FontSize="12" PointerPressed="OnRegisterLinkPressed"/>
+                    <Button Name="RegisterLink" 
+                            Content="Register" 
+                            Foreground="#EB459E" 
+                            FontWeight="Bold" 
+                            Cursor="Hand" 
+                            FontSize="12"
+                            Command="{Binding NavigateToRegisterCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0">
+                    </Button>
                 </StackPanel>
 
             </StackPanel>

@@ -6,24 +6,29 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using SharedLibrary.Models;
+using uchat.Services;
 
 namespace uchat.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IServerClient _serverClient;
+    private readonly IUserSession _userSession;
     
     public ObservableCollection<Chat> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
     
     [ObservableProperty] private Chat? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
-    [ObservableProperty] private string _userName = "User" + new Random().Next(1, 100);
+    [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private bool _shouldScrollToBottom;
     
-    public MainWindowViewModel()
+    public MainWindowViewModel(IServerClient serverClient, IUserSession userSession)
     {
-        _serverClient = new ServerClient();
+        _serverClient = serverClient;
+        _userSession = userSession;
+        // TODO: remove mock or make as default username (as it on reddit btw ?)
+        _userName = _userSession.CurrentUser?.name ?? "User" + Random.Shared.Next(1, 100);
 
         _serverClient.RegisterNotificationCallback(OnMessageReceived);
 

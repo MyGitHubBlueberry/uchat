@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using uchat.Models;
 using Microsoft.AspNetCore.SignalR.Client;
 using SharedLibrary.Models;
+using Microsoft.Extensions.Configuration;
+using uchat.Services;
 
 namespace uchat;
 
@@ -13,13 +15,14 @@ public class ServerClient : IServerClient
 {
     private readonly HubConnection _connection;
     private readonly HttpClient _httpClient;
-    // FIXME: MAKE IT CONFIGURABLE FROM BINARY!!!
-    // WHILE ON WINDOWS IT IS 5000 DEFAULT, ON MACOS IT IS 5248
-    // fix it ASAP so no more need to change it manually :)
-    private readonly string _serverUrl = "http://localhost:5248";
+    private readonly IUserSession _userSession;
+    private readonly string _serverUrl;
     
-    public ServerClient()
+    public ServerClient(IConfiguration configuration, IUserSession userSession)
     {
+        _userSession = userSession;
+        _serverUrl = configuration.GetValue<string>("App:ServerUrl") ?? "http://localhost:5248";
+        
         _httpClient = new HttpClient();
 
         _connection = new HubConnectionBuilder()
@@ -41,14 +44,34 @@ public class ServerClient : IServerClient
         });
     }
     
-    public Task UserRegistration(string username, string password)
+    public async Task UserRegistration(string username, string password)
     {
-        throw new NotImplementedException();
+        // TODO: Implement actual server registration when UserController is ready
+        // For now, simulate a successful registration
+        await Task.Delay(500);
+        
+        Console.WriteLine($"Mock registration: {username}");
     }
 
-    public Task<bool> UserLogin(string username, string password)
+    public async Task<bool> UserLogin(string username, string password)
     {
-        throw new NotImplementedException();
+        // TODO: Implement actual server authentication when UserController is ready
+        // For now, simulate successful login
+        await Task.Delay(500);
+        
+        var mockUser = new User(
+            name: username,
+            image: null,
+            friends: [],
+            chats: [],
+            groupChats: []
+        );
+        
+        _userSession.CurrentUser = mockUser;
+        _userSession.AuthToken = $"mock_token_{Guid.NewGuid()}";
+        
+        Console.WriteLine($"Mock login successful: {username}");
+        return true;
     }
 
     public async Task SendMessage(Message mes, int chatId)

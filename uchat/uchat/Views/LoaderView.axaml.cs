@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace uchat.Views;
 
-public partial class RegistrationWindow : UserControl
+public partial class LoaderView : UserControl
 {
-    public RegistrationWindow()
+    public LoaderView()
     {
         InitializeComponent();
     }
