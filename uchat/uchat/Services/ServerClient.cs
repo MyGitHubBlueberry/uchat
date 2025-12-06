@@ -13,7 +13,10 @@ public class ServerClient : IServerClient
 {
     private readonly HubConnection _connection;
     private readonly HttpClient _httpClient;
-    private readonly string _serverUrl = "http://localhost:5000";
+    // FIXME: MAKE IT CONFIGURABLE FROM BINARY!!!
+    // WHILE ON WINDOWS IT IS 5000 DEFAULT, ON MACOS IT IS 5248
+    // fix it ASAP so no more need to change it manually :)
+    private readonly string _serverUrl = "http://localhost:5248";
     
     public ServerClient()
     {
@@ -21,11 +24,21 @@ public class ServerClient : IServerClient
 
         _connection = new HubConnectionBuilder()
             .WithUrl($"{_serverUrl}/chatHub")
+            .WithAutomaticReconnect()
             .Build();
 
-        _connection.StartAsync().Wait();
-
-        _connection.InvokeAsync("JoinChat", "1"); 
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _connection.StartAsync();
+                await _connection.InvokeAsync("JoinChat", "1");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to connect to server: {ex.Message}");
+            }
+        });
     }
     
     public Task UserRegistration(string username, string password)
@@ -71,7 +84,7 @@ public class ServerClient : IServerClient
 
         var result =  await response.Result.Content.ReadFromJsonAsync<List<Message>>();
 
-        return result;
+        return result ?? [];
     }
 
     public Task<User> GetUserInfo(int chatId, int messageId)
@@ -79,9 +92,31 @@ public class ServerClient : IServerClient
         throw new NotImplementedException();
     }
 
-    public Task<Chat[]> GetChats()
+    public async Task<Chat[]> GetChats()
     {
-        throw new NotImplementedException();
+        var mockChat = new Chat(
+            id: 1,
+            userFrom: new User(
+                name: "You",
+                image: null,
+                friends: [],
+                chats: [],
+                groupChats: []
+            ),
+            userTo: new User(
+                name: "Other User",
+                image: null,
+                friends: [],
+                chats: [],
+                groupChats: []
+            ),
+            muted: false,
+            blocked: false
+        );
+        
+        await Task.Delay(50);
+        
+        return [mockChat];
     }
 
     public void RegisterNotificationCallback(Action<Message> onMessageReceived)
