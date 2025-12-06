@@ -67,7 +67,6 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,8,0,8">
-                                <!-- Messages from others (left aligned) -->
                                 <Grid ColumnDefinitions="Auto, *"
                                       IsVisible="{Binding !IsFromCurrentUser}">
                                     
@@ -109,7 +108,6 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Messages from current user (right aligned) -->
                                 <Grid ColumnDefinitions="*, Auto"
                                       IsVisible="{Binding IsFromCurrentUser}"
                                       HorizontalAlignment="Right">

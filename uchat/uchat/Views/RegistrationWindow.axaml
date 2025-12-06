@@ -64,6 +64,7 @@
                 </Grid>
                 
                 <Button Name="LoginButton"
+                        Width="160"
                         Content="Sign Up"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
