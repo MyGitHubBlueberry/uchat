@@ -11,7 +11,7 @@ public class FakeDatabase
 
     public void SaveMessage(Message msg)
     {
-        msg.Id = new Random().Next(1, 1000000);
+        msg.Id = Random.Shared.Next(1, 1000000);
         
         if (!Messages.ContainsKey(msg.ChatId))
         {
