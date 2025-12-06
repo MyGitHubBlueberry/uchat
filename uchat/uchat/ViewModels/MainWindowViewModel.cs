@@ -28,7 +28,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _serverClient = serverClient;
         _userSession = userSession;
         // TODO: remove mock or make as default username (as it on reddit btw ?)
-        _userName = _userSession.CurrentUser?.name ?? "User" + Random.Shared.Next(1, 100);
+        _userName = _userSession.CurrentUser?.LoginName;
 
         _serverClient.RegisterNotificationCallback(OnMessageReceived);
 

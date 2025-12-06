@@ -58,14 +58,15 @@ public class ServerClient : IServerClient
         // TODO: Implement actual server authentication when UserController is ready
         // For now, simulate successful login
         await Task.Delay(500);
-        
-        var mockUser = new User(
-            name: username,
-            image: null,
-            friends: [],
-            chats: [],
-            groupChats: []
-        );
+
+        var mockUser = new User()
+        {
+            LoginName = username,
+            Image = null,
+            Friends = [],
+            Chats = [],
+            GroupChats = []
+        };
         
         _userSession.CurrentUser = mockUser;
         _userSession.AuthToken = $"mock_token_{Guid.NewGuid()}";
@@ -119,20 +120,20 @@ public class ServerClient : IServerClient
     {
         var mockChat = new Chat(
             id: 1,
-            userFrom: new User(
-                name: "You",
-                image: null,
-                friends: [],
-                chats: [],
-                groupChats: []
-            ),
-            userTo: new User(
-                name: "Other User",
-                image: null,
-                friends: [],
-                chats: [],
-                groupChats: []
-            ),
+            userFrom: new User() {
+                LoginName = "You",
+                Image = null,
+                Friends = [],
+                Chats = [],
+                GroupChats = []
+            },
+            userTo: new User() {
+                LoginName = "Other User",
+                Image = null,
+                Friends = [],
+                Chats = [],
+                GroupChats = []
+            },
             muted: false,
             blocked: false
         );

@@ -1,9 +1,16 @@
 namespace SharedLibrary.Models;
 
-public record User (
-        string name,
-        string? image,
-        List<int> friends,
-        List<Chat> chats,
-        List<Chat> groupChats
-);
+public class User
+{
+    public int Id { get; set; }
+    
+    public string LoginName { get; set; }
+    
+    public string? Image { get; set; }
+    
+    public List<int>? Friends  { get; set; }
+
+    public List<Chat>? Chats  { get; set; }
+    
+    public List<GroupChat>? GroupChats {get; set;}
+}

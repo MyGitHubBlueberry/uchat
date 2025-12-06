@@ -8,13 +8,3 @@ public record Chat(
         bool blocked
     );
 
-public record GroupChat(
-        int id,
-        User owner,
-        string name,
-        bool muted,
-        List<User> participants,
-        string? picture,
-        string? description
-    );
-
