@@ -7,12 +7,10 @@ using SharedLibrary.Models;
 using SharedLibrary.Extensions;
 using uchat_server.Database.Models;
 
-
 namespace uchat_server.Services
 {
     public class ChatService(AppDbContext context)
     {
-
         public int CreateChatRoom(string chatName)
         {
             // key to the room
@@ -32,7 +30,6 @@ namespace uchat_server.Services
             context.SaveChanges();
 
             return newChat.Id;
-
         }
 
         public byte[] GetChatKey(int chatId)
