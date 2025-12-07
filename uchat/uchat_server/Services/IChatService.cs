@@ -7,7 +7,6 @@ namespace uchat_server.Services
         Task<int> CreateChatRoomAsync(string chatName);
         Task<DbChat?> GetChatByIdAsync(int chatId);
         Task<List<DbChat>> GetUserChatsAsync(int userId);
-        Task<bool> ChatExistsAsync(int chatId);
         Task<bool> DeleteChatAsync(int chatId);
         Task<byte[]> GetChatKeyAsync(int chatId);
 

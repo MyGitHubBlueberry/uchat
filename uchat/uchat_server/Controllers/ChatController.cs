@@ -5,7 +5,7 @@ namespace uchat_server.Controllers;
 
 [ApiController]
 [Route("api/chat")]
-public class ChatController(ChatService chatService) : ControllerBase
+public class ChatController(IChatService chatService) : ControllerBase
 {
     [HttpGet("{chatId}/key")]
     public IActionResult GetChatKey(int chatId)
@@ -23,7 +23,7 @@ public class ChatController(ChatService chatService) : ControllerBase
     }
 
     [HttpPost("create")]
-    public IActionResult CreateChat(string chatName)
+    public IActionResult CreateChat([FromBody] string chatName)
     {
         try
         {
@@ -32,15 +32,6 @@ public class ChatController(ChatService chatService) : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpGet("exists/{chatId}")]
-    public IActionResult ChatExists(int chatId) {
-        try {
-            return Ok(chatService.ChatExistsAsync(chatId));
-        } catch (Exception ex) {
             return BadRequest(ex.Message);
         }
     }

@@ -8,7 +8,7 @@ namespace uchat_server.Services
 {
     public class ChatService(AppDbContext context) : IChatService
     {
-        public async Task<bool> ChatExistsAsync(int chatId)
+        private async Task<bool> ChatExistsAsync(int chatId)
         {
             return await context.FindAsync(typeof(DbChat), chatId) is not null;
         }
