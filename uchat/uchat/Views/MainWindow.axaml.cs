@@ -1,15 +1,12 @@
-using Avalonia.Controls;
-using Avalonia.Input;
 using uchat.ViewModels;
 
 namespace uchat.Views;
 
-public partial class MainWindow : UserControl
+public partial class MainWindow : FocusDetachableUserControl
 {
     public MainWindow()
     {
         InitializeComponent();
-        PointerPressed += OnControlPointerPressed;
         
         DataContextChanged += (s, e) =>
         {
@@ -26,15 +23,6 @@ public partial class MainWindow : UserControl
                 };
             }
         };
-    }
-    
-    private void OnControlPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        var element = e.Source as Control;
-        if (element is not TextBox)
-        {
-            TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
-        }
     }
 
     private void ScrollToBottom()
