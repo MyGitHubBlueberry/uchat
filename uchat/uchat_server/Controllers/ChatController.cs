@@ -7,21 +7,6 @@ namespace uchat_server.Controllers;
 [Route("api/chat")]
 public class ChatController(IChatService chatService) : ControllerBase
 {
-    [HttpGet("{chatId}/key")]
-    public IActionResult GetChatKey(int chatId)
-    {
-        try
-        {
-            var key = chatService.GetChatKeyAsync(chatId);
-
-            return Ok(key);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
-
     [HttpPost("create")]
     public IActionResult CreateChat([FromBody] string chatName)
     {
@@ -45,10 +30,11 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
+    // TODO: ADD SECRET KEY PARAMETER
     [HttpGet("{chatId}")]
     public IActionResult GetChatById(int chatId) {
         try {
-            return Ok(chatService.DeleteChatAsync(chatId));
+            return Ok(chatService.GetChatByIdAsync(chatId));
         } catch (Exception ex) {
             return BadRequest(ex.Message);
         }
