@@ -1,5 +1,4 @@
 ﻿using System.Security.Cryptography;
-using System.IO;
 using SharedLibrary.Models;
 
 namespace SharedLibrary.Extensions

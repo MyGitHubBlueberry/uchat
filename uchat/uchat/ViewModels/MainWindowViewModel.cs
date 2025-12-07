@@ -28,7 +28,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _serverClient = serverClient;
         _userSession = userSession;
         // TODO: remove mock or make as default username (as it on reddit btw ?)
-        _userName = _userSession.CurrentUser?.LoginName;
+        _userName = _userSession.CurrentUser?.Name;
 
         _serverClient.RegisterNotificationCallback(OnMessageReceived);
 
@@ -36,6 +36,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _ = InitializeAsync();
     }
+
+    private int _currentPage = 0;
+    private const int PageSize = 50;
 
     private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -96,17 +99,33 @@ public partial class MainWindowViewModel : ViewModelBase
     private async Task GetChatHistory()
     {
         if (SelectedChat == null) return;
-        
         Messages.Clear();
-        
-        var history = await _serverClient.GetMessages(SelectedChat.id);
-        
+
+        _currentPage = 1;
+
+        var history = await _serverClient.GetMessages(SelectedChat.id, _currentPage, PageSize);
+
         foreach (var msg in history)
         {
             Messages.Add(CreateMessageViewModel(msg));
         }
-        
+
         ShouldScrollToBottom = true;
+    }
+
+    [RelayCommand]
+    private async Task LoadMore()
+    {
+        if (SelectedChat == null) return;
+
+        _currentPage++;
+
+        var older = await _serverClient.GetMessages(SelectedChat.id, _currentPage, PageSize);
+
+        for (int i = older.Count - 1; i >= 0; i--)
+        {
+            Messages.Insert(0, CreateMessageViewModel(older[i]));
+        }
     }
     
     private void OnMessageReceived(Message msg)

@@ -1,23 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
-using SharedLibrary.Models;
+using uchat_server.Services;
+using uchat_server.Models;
 
 namespace uchat_server.Controllers;
 
 [ApiController]
 [Route("api")]
-public class UserController(FakeDatabase db) : ControllerBase
+public class UserController(IUserService userService) : ControllerBase
 {
-    [HttpPost("user")]
-    public async Task<IActionResult> CreateUser([FromBody] User user)
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
     {
-        db.CreateUser(user);
-        
-        return Ok(new { Status = "Create", MessageId = user.Id });
+        try
+        {
+            var response = await userService.RegisterAsync(request);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
     }
 
-    [HttpGet("users")]
-    public async Task<List<User>> GetUsers()
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        return db.GetUsers();
+        try
+        {
+            var response = await userService.LoginAsync(request);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return Unauthorized(new { Error = ex.Message });
+        }
     }
 }

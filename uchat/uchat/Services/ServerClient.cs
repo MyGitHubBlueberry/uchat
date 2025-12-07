@@ -60,7 +60,7 @@ public class ServerClient : IServerClient
 
         var mockUser = new User()
         {
-            LoginName = username,
+            Name = username,
             Image = null,
             Friends = [],
             Chats = [],
@@ -98,14 +98,21 @@ public class ServerClient : IServerClient
 
     public async Task<List<Message>> GetMessages(int chatId)
     {
-        var response = _httpClient.GetAsync($"{_serverUrl}/api/message/{chatId}");
-        
-        if (!response.IsCompleted)
+        return await GetMessages(chatId, 1, 50);
+    }
+
+    public async Task<List<Message>> GetMessages(int chatId, int pageNumber = 1, int pageSize = 50)
+    {
+        var url = $"{_serverUrl}/api/message/{chatId}?pageNumber={pageNumber}&pageSize={pageSize}";
+
+        var response = await _httpClient.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
         {
-            throw new Exception("Error sending message");
+            throw new Exception("Error fetching messages");
         }
 
-        var result =  await response.Result.Content.ReadFromJsonAsync<List<Message>>();
+        var result = await response.Content.ReadFromJsonAsync<List<Message>>();
 
         return result ?? [];
     }
@@ -120,14 +127,14 @@ public class ServerClient : IServerClient
         var mockChat = new Chat(
             id: 1,
             userFrom: new User() {
-                LoginName = "You",
+                Name = "You",
                 Image = null,
                 Friends = [],
                 Chats = [],
                 GroupChats = []
             },
             userTo: new User() {
-                LoginName = "Other User",
+                Name = "Other User",
                 Image = null,
                 Friends = [],
                 Chats = [],
@@ -136,9 +143,9 @@ public class ServerClient : IServerClient
             muted: false,
             blocked: false
         );
-        
+
         await Task.Delay(50);
-        
+
         return [mockChat];
     }
 

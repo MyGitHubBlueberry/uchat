@@ -3,6 +3,7 @@ using uchat_server.Database;
 using uchat_server.Hubs;
 using uchat_server.Args;
 using Scalar.AspNetCore;
+using uchat_server.Services;
 
 class Program {
     static void Main(string[] args) {
@@ -32,6 +33,10 @@ class Program {
                       .AllowAnyHeader();
             });
         });
+
+        builder.Services.AddScoped<IMessageService, MessageService>()
+                        .AddScoped<IUserService, UserService>();
+
 
         var app = builder.Build();
 

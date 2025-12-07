@@ -1,6 +1,4 @@
-﻿using uchat_server.Models;
-
-namespace uchat_server.Database.Models
+﻿namespace uchat_server.Database.Models
 {
     public class DbChatMember
     {
