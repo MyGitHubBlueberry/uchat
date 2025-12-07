@@ -12,7 +12,7 @@ public class ChatController(ChatService chatService) : ControllerBase
     {
         try
         {
-            var key = chatService.GetChatKey(chatId);
+            var key = chatService.GetChatKeyAsync(chatId);
 
             return Ok(key);
         }
@@ -27,7 +27,7 @@ public class ChatController(ChatService chatService) : ControllerBase
     {
         try
         {
-            var newChatId = chatService.CreateChatRoom(chatName);
+            var newChatId = chatService.CreateChatRoomAsync(chatName);
             return Ok(newChatId);
         }
         catch (Exception ex)

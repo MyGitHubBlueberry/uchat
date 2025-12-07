@@ -5,7 +5,7 @@ namespace uchat_server.Services
     public interface IChatService
     {
         Task<int> CreateChatRoomAsync(string chatName);
-        Task<DbChat?> GetChatByIdAsync(int chatId, bool includeMembers = false, bool includeMessages = false);
+        Task<DbChat?> GetChatByIdAsync(int chatId);
         Task<List<DbChat>> GetUserChatsAsync(int userId);
         Task<bool> ChatExistsAsync(int chatId);
         Task<bool> DeleteChatAsync(int chatId);

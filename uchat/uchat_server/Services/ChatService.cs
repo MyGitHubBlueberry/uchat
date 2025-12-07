@@ -1,7 +1,4 @@
-﻿using System;
-using System.Security.Cryptography;
-using SharedLibrary;
-using uchat_server.Models;
+﻿using System.Security.Cryptography;
 using uchat_server.Database;
 using SharedLibrary.Models;
 using SharedLibrary.Extensions;
@@ -9,11 +6,15 @@ using uchat_server.Database.Models;
 
 namespace uchat_server.Services
 {
-    public class ChatService(AppDbContext context)
+    public class ChatService(AppDbContext context) : IChatService
     {
-        public int CreateChatRoom(string chatName)
+        public async Task<bool> ChatExistsAsync(int chatId)
         {
-            // key to the room
+            return await context.FindAsync(typeof(DbChat), chatId) is not null;
+        }
+
+        public async Task<int> CreateChatRoomAsync(string chatName)
+        {
             byte[] rawChatKey = Aes.Create().Key;
 
             string keyAsString = Convert.ToBase64String(rawChatKey);
@@ -26,16 +27,33 @@ namespace uchat_server.Services
                 KeyIV = secureKeyPackage.iv
             };
 
-            context.Chats.Add(newChat);
+            await context.Chats.AddAsync(newChat);
             context.SaveChanges();
 
             return newChat.Id;
         }
 
-        public byte[] GetChatKey(int chatId)
+        public async Task<bool> DeleteChatAsync(int chatId)
         {
-            var chat = context.Chats.Find(chatId);
-            if (chat == null) throw new Exception("Chat not found");
+            if (context.Chats.FindAsync(chatId).GetAwaiter().GetResult() is DbChat chat) {
+                context.Chats.Remove(chat);
+                return true;
+            } 
+            return false;
+        }
+
+        public async Task<DbChat?> GetChatByIdAsync(int chatId)
+        {
+            return await context.Chats.FindAsync(chatId);
+        }
+
+        public async Task<byte[]> GetChatKeyAsync(int chatId)
+        {
+            DbChat? chat = await context.Chats.FindAsync(chatId);
+
+            if (chat is null) {
+                throw new Exception("Chat not found");
+            }
 
             var encryptedPackage = new EncryptedMessage
             (
@@ -46,6 +64,25 @@ namespace uchat_server.Services
             string keyAsString = encryptedPackage.Decrypt(ServerSecrets.MasterKey);
 
             return Convert.FromBase64String(keyAsString);
+        }
+
+        public async Task<List<DbChat>> GetUserChatsAsync(int userId)
+        {
+            DbUser? user = await context.Users.FindAsync(userId);
+
+            if (user is null) {
+                throw new Exception("User doesn't exist");
+            }
+
+            if (user.Chats is List<DbChatMember> chats) {
+                return chats
+                    .DefaultIfEmpty()
+                    .Where(c => c is not null)
+                    .Select(c => c.Chat)
+                    .ToList();
+            }
+
+            return new List<DbChat>();
         }
     }
 }
