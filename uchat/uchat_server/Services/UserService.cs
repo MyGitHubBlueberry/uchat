@@ -87,21 +87,24 @@ namespace uchat_server.Services
             };
         }
 
-        public async Task<SharedLibrary.Models.User> GetUserByNameAsync(string name)
+        public async Task<List<SharedLibrary.Models.User>> GetUserByNameAsync(string partialName)
         {
-            var dbUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Name == name);
-
-            if (dbUser == null)
+            if (string.IsNullOrWhiteSpace(partialName))
             {
-                throw new Exception("User not found");
+                return new List<SharedLibrary.Models.User>();
             }
 
-            return new SharedLibrary.Models.User
+            var dbUsers = await _context.Users
+                .Where(u => u.Name.StartsWith(partialName)) 
+                .Take(10) // Limit to 10 results
+                .ToListAsync();
+
+            return dbUsers.Select(u => new SharedLibrary.Models.User
             {
-                Id = dbUser.Id,
-                Name = dbUser.Name,
-            };
+                Id = u.Id,
+                Name = u.Name,
+                Image = u.ImageUrl 
+            }).ToList();
         }
 
         private static string GenerateUserToken()
