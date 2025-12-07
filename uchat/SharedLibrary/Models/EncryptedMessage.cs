@@ -1,4 +1,4 @@
-﻿namespace uchat.Models
+﻿namespace SharedLibrary.Models
 {
     public record EncryptedMessage(
             byte[] cipheredText,

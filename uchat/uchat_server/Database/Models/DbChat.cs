@@ -4,5 +4,7 @@ namespace uchat_server.Models
     {
         public int Id { get; set; }
         public List<DbMessage> Messages { get; set; } = null!;
+        public byte[] EncryptedKey { get; set; }
+        public byte[] KeyIV { get; set; }
     }
 }
