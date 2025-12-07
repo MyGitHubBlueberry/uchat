@@ -4,9 +4,9 @@ namespace uchat_server.Models
     {
         public int Id { get; set; }
         public int SourceUserId { get; set; }
-        public DbUser SourceUser { get; set; } = null!;
+        public required DbUser SourceUser { get; set; }
         public int TargetUserId { get; set; }
-        public DbUser TargetUser { get; set; } = null!;
+        public required DbUser TargetUser { get; set; }
 
         public bool IsBlocked { get; set; } = false;
         public bool IsFriend { get; set; } = false;
