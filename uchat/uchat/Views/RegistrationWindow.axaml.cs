@@ -1,8 +1,6 @@
-using Avalonia.Controls;
-
 namespace uchat.Views;
 
-public partial class RegistrationWindow : UserControl
+public partial class RegistrationWindow : FocusDetachableUserControl
 {
     public RegistrationWindow()
     {

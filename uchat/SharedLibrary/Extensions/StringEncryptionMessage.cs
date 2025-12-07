@@ -1,8 +1,8 @@
 ﻿using System.Security.Cryptography;
 using System.IO;
-using uchat.Models;
+using SharedLibrary.Models;
 
-namespace uchat.Extensions
+namespace SharedLibrary.Extensions
 {
 	public static class StringEncryptionMessage
 	{
@@ -16,16 +16,18 @@ namespace uchat.Extensions
                 ICryptoTransform encryptor = aes.CreateEncryptor(key, aes.IV);
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                    CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write);
+                    
+                    using (StreamWriter streamWriter = new StreamWriter(cryptoStream))
                     {
-                        using (StreamWriter streamWriter = new StreamWriter(cryptoStream))
-                        {
-                            streamWriter.Write(simpletext);
-                        }
-
-                        return new EncryptedMessage(memoryStream.ToArray(), aes.IV);
-                        
+                        streamWriter.Write(simpletext);
                     }
+
+                    return new EncryptedMessage(
+                        memoryStream.ToArray(),
+                        aes.IV
+                        );
+        
                 }
             }
         }

@@ -62,7 +62,7 @@ public sealed class LoaderViewModel : ViewModelBase
         if (isMock)
         {
             // FIXME: always return false for now (user not authenticated)
-            return true;
+            return false;
         }
 
         return _userSession.IsAuthenticated;

@@ -13,5 +13,8 @@ public class DbChat
     public List<DbMessage> Messages { get; set; } = null!;
     public List<DbChatMember> Members { get; set; } = null!;
 
+    public byte[] EncryptedKey { get; set; }
+    public byte[] KeyIV { get; set; }
+
     public bool IsGroupChat => OwnerId.HasValue;
 }
