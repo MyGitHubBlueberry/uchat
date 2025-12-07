@@ -5,7 +5,7 @@ using uchat_server.Models;
 namespace uchat_server.Controllers;
 
 [ApiController]
-[Route("api")]
+[Route("api/user")]
 public class UserController(IUserService userService) : ControllerBase
 {
     [HttpPost("register")]

@@ -4,10 +4,10 @@ using uchat_server.Services;
 namespace uchat_server.Controllers;
 
 [ApiController]
-[Route("api")]
+[Route("api/chat")]
 public class ChatController(ChatService chatService) : ControllerBase
 {
-    [HttpGet("chat/key/{chatId}")]
+    [HttpGet("{chatId}")]
     public IActionResult GetChatKey(int chatId)
     {
         try
@@ -22,7 +22,7 @@ public class ChatController(ChatService chatService) : ControllerBase
         }
     }
 
-    [HttpPost("chat/create")]
+    [HttpPost("create")]
     public IActionResult CreateChat([FromBody] string chatName)
     {
         try

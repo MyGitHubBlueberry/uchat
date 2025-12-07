@@ -7,7 +7,7 @@ using uchat_server.Services;
 namespace uchat_server.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/message")]
 public class MessageController(IHubContext<ChatHub> hubContext, IMessageService messageService) : ControllerBase
 {
     [HttpPost]
