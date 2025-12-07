@@ -35,7 +35,8 @@ namespace uchat_server.Services
 
         public async Task<bool> DeleteChatAsync(int chatId)
         {
-            if (context.Chats.FindAsync(chatId).GetAwaiter().GetResult() is DbChat chat) {
+            DbChat? chat = await context.Chats.FindAsync(chatId);
+            if (chat is not null) {
                 context.Chats.Remove(chat);
                 return true;
             } 

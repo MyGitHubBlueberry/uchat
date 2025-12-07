@@ -7,7 +7,7 @@ namespace uchat_server.Controllers;
 [Route("api/chat")]
 public class ChatController(ChatService chatService) : ControllerBase
 {
-    [HttpGet("{chatId}")]
+    [HttpGet("{chatId}/key")]
     public IActionResult GetChatKey(int chatId)
     {
         try
@@ -23,7 +23,7 @@ public class ChatController(ChatService chatService) : ControllerBase
     }
 
     [HttpPost("create")]
-    public IActionResult CreateChat([FromBody] string chatName)
+    public IActionResult CreateChat(string chatName)
     {
         try
         {
@@ -32,6 +32,42 @@ public class ChatController(ChatService chatService) : ControllerBase
         }
         catch (Exception ex)
         {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("exists/{chatId}")]
+    public IActionResult ChatExists(int chatId) {
+        try {
+            return Ok(chatService.ChatExistsAsync(chatId));
+        } catch (Exception ex) {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{chatId}")]
+    public IActionResult DeleteChat(int chatId) {
+        try {
+            return Ok(chatService.DeleteChatAsync(chatId));
+        } catch (Exception ex) {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("{chatId}")]
+    public IActionResult GetChatById(int chatId) {
+        try {
+            return Ok(chatService.DeleteChatAsync(chatId));
+        } catch (Exception ex) {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("{userId}/chats")]
+    public IActionResult GetUserChats(int userId) {
+        try {
+            return Ok(chatService.GetUserChatsAsync(userId));
+        } catch (Exception ex) {
             return BadRequest(ex.Message);
         }
     }
