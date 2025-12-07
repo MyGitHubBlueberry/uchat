@@ -1,9 +1,12 @@
+using SharedLibrary.Models;
+
 namespace uchat_server.Database.Models;
 
 public class DbMessage
 {
     public int Id { get; set; }
-    public required string Text { get; set; }
+    public required byte[] CipheredText { get; set; }
+    public required byte[] Iv { get; set; }
     public DateTime TimeSent { get; set; } = DateTime.UtcNow;
     public DateTime? TimeEdited { get; set; }
     public int ChatId { get; set; }

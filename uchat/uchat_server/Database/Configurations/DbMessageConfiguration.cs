@@ -10,9 +10,11 @@ namespace uchat_server.Database.Configurations
         {
             builder.HasKey(m => m.Id);
 
-            builder.Property(m => m.Text)
-                .IsRequired()
-                .HasMaxLength(4000);
+            builder.Property(m => m.Iv)
+                .IsRequired();  //todo add max length
+
+            builder.Property(m => m.CipheredText)
+                .IsRequired();  //todo add max length
 
             builder.Property(m => m.TimeSent)
                 .IsRequired();
