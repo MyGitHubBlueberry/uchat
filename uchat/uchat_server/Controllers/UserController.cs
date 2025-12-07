@@ -35,4 +35,32 @@ public class UserController(IUserService userService) : ControllerBase
             return Unauthorized(new { Error = ex.Message });
         }
     }
+
+    [HttpGet("user/{userId:int}")]
+    public async Task<IActionResult> GetUserById(int userId)
+    {
+        try
+        {
+            var user = await userService.GetUserByIdAsync(userId);
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+    }
+
+    [HttpGet("search/{name}")]
+    public async Task<IActionResult> GetUserByName(string name)
+    {
+        try
+        {
+            var user = await userService.GetUserByNameAsync(name); 
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+    }
 }

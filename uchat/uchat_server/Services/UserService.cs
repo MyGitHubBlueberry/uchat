@@ -70,6 +70,40 @@ namespace uchat_server.Services
             };
         }
 
+        public async Task<SharedLibrary.Models.User> GetUserByIdAsync(int userId)
+        {
+            var dbUser = await _context.Users.FindAsync(userId);
+
+            if (dbUser == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            return new SharedLibrary.Models.User
+            {
+                Id = dbUser.Id,
+                Name = dbUser.Name,
+                Image = dbUser.ImageUrl
+            };
+        }
+
+        public async Task<SharedLibrary.Models.User> GetUserByNameAsync(string name)
+        {
+            var dbUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Name == name);
+
+            if (dbUser == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            return new SharedLibrary.Models.User
+            {
+                Id = dbUser.Id,
+                Name = dbUser.Name,
+            };
+        }
+
         private static string GenerateUserToken()
         {
             // Simple random string for now
