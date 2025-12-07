@@ -5,6 +5,7 @@ using uchat_server.Models;
 using uchat_server.Database;
 using SharedLibrary.Models;
 using SharedLibrary.Extensions;
+using uchat_server.Database.Models;
 
 
 namespace uchat_server.Services
