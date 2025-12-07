@@ -32,7 +32,6 @@ namespace uchat_server.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Discriminator = table.Column<string>(type: "TEXT", maxLength: 13, nullable: false),
                     Title = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     Description = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     ImageUrl = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
@@ -78,6 +77,48 @@ namespace uchat_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Attachments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MessageId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Url = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attachments", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatMembers",
+                columns: table => new
+                {
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ChatId = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsAdmin = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    IsMuted = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    IsBlocked = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    LastMessageId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatMembers", x => new { x.UserId, x.ChatId });
+                    table.ForeignKey(
+                        name: "FK_ChatMembers_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ChatMembers_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
@@ -93,35 +134,15 @@ namespace uchat_server.Migrations
                 {
                     table.PrimaryKey("PK_Messages", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Messages_ChatMembers_SenderId_ChatId",
+                        columns: x => new { x.SenderId, x.ChatId },
+                        principalTable: "ChatMembers",
+                        principalColumns: new[] { "UserId", "ChatId" },
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_Messages_Chats_ChatId",
                         column: x => x.ChatId,
                         principalTable: "Chats",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Messages_Users_SenderId",
-                        column: x => x.SenderId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Attachments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    MessageId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Url = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Attachments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Attachments_Messages_MessageId",
-                        column: x => x.MessageId,
-                        principalTable: "Messages",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -130,6 +151,21 @@ namespace uchat_server.Migrations
                 name: "IX_Attachments_MessageId",
                 table: "Attachments",
                 column: "MessageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMembers_ChatId",
+                table: "ChatMembers",
+                column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMembers_LastMessageId",
+                table: "ChatMembers",
+                column: "LastMessageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMembers_UserId",
+                table: "ChatMembers",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Chats_OwnerId",
@@ -142,9 +178,9 @@ namespace uchat_server.Migrations
                 column: "ChatId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_SenderId",
+                name: "IX_Messages_SenderId_ChatId",
                 table: "Messages",
-                column: "SenderId");
+                columns: new[] { "SenderId", "ChatId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRelations_SourceUserId_TargetUserId",
@@ -162,11 +198,31 @@ namespace uchat_server.Migrations
                 table: "Users",
                 column: "Name",
                 unique: true);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Attachments_Messages_MessageId",
+                table: "Attachments",
+                column: "MessageId",
+                principalTable: "Messages",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_ChatMembers_Messages_LastMessageId",
+                table: "ChatMembers",
+                column: "LastMessageId",
+                principalTable: "Messages",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_ChatMembers_Messages_LastMessageId",
+                table: "ChatMembers");
+
             migrationBuilder.DropTable(
                 name: "Attachments");
 
@@ -175,6 +231,9 @@ namespace uchat_server.Migrations
 
             migrationBuilder.DropTable(
                 name: "Messages");
+
+            migrationBuilder.DropTable(
+                name: "ChatMembers");
 
             migrationBuilder.DropTable(
                 name: "Chats");

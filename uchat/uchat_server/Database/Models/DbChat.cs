@@ -1,8 +1,17 @@
-namespace uchat_server.Models
+namespace uchat_server.Database.Models;
+
+public class DbChat
 {
-    public class DbChat
-    {
-        public int Id { get; set; }
-        public List<DbMessage> Messages { get; set; } = null!;
-    }
+    public int Id { get; set; }
+
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public string? ImageUrl { get; set; }
+    public int? OwnerId { get; set; }
+    public DbUser? Owner { get; set; }
+
+    public List<DbMessage> Messages { get; set; } = null!;
+    public List<DbChatMember> Members { get; set; } = null!;
+
+    public bool IsGroupChat => OwnerId.HasValue;
 }

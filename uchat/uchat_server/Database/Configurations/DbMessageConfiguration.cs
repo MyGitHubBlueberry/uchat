@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using uchat_server.Models;
+using uchat_server.Database.Models;
 
 namespace uchat_server.Database.Configurations
 {
@@ -20,6 +20,9 @@ namespace uchat_server.Database.Configurations
             builder.Property(m => m.TimeEdited)
                 .IsRequired(false);
 
+            builder.Property(m => m.ChatId)
+                .IsRequired();
+
             builder.HasOne(m => m.Chat)
                 .WithMany(c => c.Messages)
                 .HasForeignKey(m => m.ChatId)
@@ -27,7 +30,8 @@ namespace uchat_server.Database.Configurations
 
             builder.HasOne(m => m.Sender)
                 .WithMany()
-                .HasForeignKey(m => m.SenderId)
+                .HasForeignKey(m => new { m.SenderId, m.ChatId })
+                .HasPrincipalKey(cm => new { cm.UserId, cm.ChatId })
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(m => m.Attachments)

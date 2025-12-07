@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using uchat_server.Models;
+using uchat_server.Database.Models;
 
 namespace uchat_server.Database.Configurations;
 

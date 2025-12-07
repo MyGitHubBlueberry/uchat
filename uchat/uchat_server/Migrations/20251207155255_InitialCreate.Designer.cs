@@ -11,7 +11,7 @@ using uchat_server.Database;
 namespace uchat_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251207010214_InitialCreate")]
+    [Migration("20251207155255_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace uchat_server.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
-            modelBuilder.Entity("uchat_server.Models.DbAttachment", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbAttachment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -41,27 +41,72 @@ namespace uchat_server.Migrations
                     b.ToTable("Attachments");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbChat", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbChat", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(13)
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OwnerId");
+
                     b.ToTable("Chats");
-
-                    b.HasDiscriminator().HasValue("DbChat");
-
-                    b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbMessage", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbChatMember", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsBlocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsMuted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<int?>("LastMessageId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId", "ChatId");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("LastMessageId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChatMembers");
+                });
+
+            modelBuilder.Entity("uchat_server.Database.Models.DbMessage", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -88,12 +133,12 @@ namespace uchat_server.Migrations
 
                     b.HasIndex("ChatId");
 
-                    b.HasIndex("SenderId");
+                    b.HasIndex("SenderId", "ChatId");
 
                     b.ToTable("Messages");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbUser", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -121,7 +166,7 @@ namespace uchat_server.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbUserRelation", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbUserRelation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -153,34 +198,9 @@ namespace uchat_server.Migrations
                     b.ToTable("UserRelations");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbGroupChat", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbAttachment", b =>
                 {
-                    b.HasBaseType("uchat_server.Models.DbChat");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasDiscriminator().HasValue("DbGroupChat");
-                });
-
-            modelBuilder.Entity("uchat_server.Models.DbAttachment", b =>
-                {
-                    b.HasOne("uchat_server.Models.DbMessage", "Message")
+                    b.HasOne("uchat_server.Database.Models.DbMessage", "Message")
                         .WithMany("Attachments")
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -189,17 +209,53 @@ namespace uchat_server.Migrations
                     b.Navigation("Message");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbMessage", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbChat", b =>
                 {
-                    b.HasOne("uchat_server.Models.DbChat", "Chat")
+                    b.HasOne("uchat_server.Database.Models.DbUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("uchat_server.Database.Models.DbChatMember", b =>
+                {
+                    b.HasOne("uchat_server.Database.Models.DbChat", "Chat")
+                        .WithMany("Members")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("uchat_server.Database.Models.DbMessage", "LastMessage")
+                        .WithMany()
+                        .HasForeignKey("LastMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("uchat_server.Database.Models.DbUser", "User")
+                        .WithMany("Chats")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
+
+                    b.Navigation("LastMessage");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("uchat_server.Database.Models.DbMessage", b =>
+                {
+                    b.HasOne("uchat_server.Database.Models.DbChat", "Chat")
                         .WithMany("Messages")
                         .HasForeignKey("ChatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("uchat_server.Models.DbUser", "Sender")
+                    b.HasOne("uchat_server.Database.Models.DbChatMember", "Sender")
                         .WithMany()
-                        .HasForeignKey("SenderId")
+                        .HasForeignKey("SenderId", "ChatId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -208,15 +264,15 @@ namespace uchat_server.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbUserRelation", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbUserRelation", b =>
                 {
-                    b.HasOne("uchat_server.Models.DbUser", "SourceUser")
+                    b.HasOne("uchat_server.Database.Models.DbUser", "SourceUser")
                         .WithMany()
                         .HasForeignKey("SourceUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("uchat_server.Models.DbUser", "TargetUser")
+                    b.HasOne("uchat_server.Database.Models.DbUser", "TargetUser")
                         .WithMany()
                         .HasForeignKey("TargetUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -227,25 +283,21 @@ namespace uchat_server.Migrations
                     b.Navigation("TargetUser");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbGroupChat", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbChat", b =>
                 {
-                    b.HasOne("uchat_server.Models.DbUser", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Members");
 
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("uchat_server.Models.DbChat", b =>
-                {
                     b.Navigation("Messages");
                 });
 
-            modelBuilder.Entity("uchat_server.Models.DbMessage", b =>
+            modelBuilder.Entity("uchat_server.Database.Models.DbMessage", b =>
                 {
                     b.Navigation("Attachments");
+                });
+
+            modelBuilder.Entity("uchat_server.Database.Models.DbUser", b =>
+                {
+                    b.Navigation("Chats");
                 });
 #pragma warning restore 612, 618
         }

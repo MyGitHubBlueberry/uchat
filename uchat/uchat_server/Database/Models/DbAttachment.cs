@@ -1,12 +1,11 @@
-namespace uchat_server.Models
-{
-    public class DbAttachment
-    {
-        public int Id { get; set; }
-        
-        public int MessageId { get; set; }
-        public DbMessage Message { get; set; } = null!;
+namespace uchat_server.Database.Models;
 
-        public string Url { get; set; } = null!;
-    }
+public class DbAttachment
+{
+    public int Id { get; set; }
+    
+    public int MessageId { get; set; }
+    public DbMessage Message { get; set; } = null!;
+
+    public string Url { get; set; } = null!;
 }

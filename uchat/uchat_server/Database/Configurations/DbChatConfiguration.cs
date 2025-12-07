@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using uchat_server.Models;
+using uchat_server.Database.Models;
 
 namespace uchat_server.Database.Configurations
 {
@@ -11,12 +11,27 @@ namespace uchat_server.Database.Configurations
         {
             builder.HasKey(c => c.Id);
 
-            builder.HasMany(c => c.Messages)
-                .WithOne(m => m.Chat)
-                .HasForeignKey(m => m.ChatId)
+            builder.Property(c => c.Title)
+                .HasMaxLength(200);
+
+            builder.Property(c => c.Description)
+                .HasMaxLength(1000);
+
+            builder.Property(c => c.ImageUrl)
+                .HasMaxLength(500);
+
+            builder.HasOne(c => c.Owner)
+                .WithMany()
+                .HasForeignKey(c => c.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            builder.HasMany(c => c.Members)
+                .WithOne(cm => cm.Chat)
+                .HasForeignKey(cm => cm.ChatId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.UseTphMappingStrategy();
+            builder.Ignore(c => c.IsGroupChat);
         }
     }
 }
