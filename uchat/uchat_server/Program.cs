@@ -35,7 +35,8 @@ class Program {
         });
 
         builder.Services.AddScoped<IMessageService, MessageService>()
-                        .AddScoped<IUserService, UserService>();
+                        .AddScoped<IUserService, UserService>()
+                        .AddScoped<IChatService, ChatService>();
 
 
         var app = builder.Build();
