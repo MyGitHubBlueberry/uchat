@@ -67,15 +67,7 @@ namespace uchat_server.Services
                 throw new Exception("Chat not found");
             }
 
-            var encryptedPackage = new EncryptedMessage
-            (
-                chat.EncryptedKey,
-                chat.KeyIV
-            );
-
-            string keyAsString = encryptedPackage.Decrypt(_masterKey);
-
-            return Convert.FromBase64String(keyAsString) == key;
+            return chat.EncryptedKey == key;
         }
 
         public async Task<List<DbChat>> GetUserChatsAsync(int userId)
