@@ -3,6 +3,8 @@ using SharedLibrary.Models;
 using System.Security.Cryptography;
 using uchat_server.Database;
 using uchat_server.Database.Models;
+using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 //TODO: change this to return Chat or GroupChat
 
@@ -19,39 +21,64 @@ namespace uchat_server.Services
             return await context.FindAsync(typeof(DbChat), chatId) is not null;
         }
 
-        public async Task<int> CreateChatAsync(int creatorId, int userId) {
+        public async Task<int> CreateChatAsync(int sourceUserId, int targetUserId) {
             byte[] rawChatKey = Aes.Create().Key;
             string keyAsString = Convert.ToBase64String(rawChatKey);
             EncryptedMessage secureKeyPackage = keyAsString.Encrypt(masterKey);
 
-            DbUser dbCreator = await context.Users.FindAsync(creatorId)
+            if (sourceUserId == targetUserId)
+                throw new InvalidOperationException("sourceUserId and targetUserId should be different");
+            DbUser dbSourceUser = await context.Users.FindAsync(sourceUserId)
                 ?? throw new InvalidOperationException("Can't create chat for user that doesn't exist");
-            DbUser dbUser = await context.Users.FindAsync(userId)
+            DbUser dbTargetUser = await context.Users.FindAsync(targetUserId)
                 ?? throw new InvalidOperationException("Can't create chat for user that doesn't exist");
+
+            var chatExists = await context.Chats
+                .AnyAsync(c => !c.IsGroupChat
+                        && c.Members.Any(m => m.UserId == sourceUserId)
+                        && c.Members.Any(m => m.UserId == targetUserId));
+
+            if (chatExists)
+                throw new InvalidOperationException("Chat already exists");
 
             var dbChat = new DbChat {
                 EncryptedKey = secureKeyPackage.cipheredText,
                 KeyIV = secureKeyPackage.iv,
-                Title = dbUser.Name,
+                Title = dbTargetUser.Name,
             };
 
             await context.Chats.AddAsync(dbChat);
-            context.SaveChanges();
 
             DbUserRelation? relation = context.UserRelations
-                .Where(r => r.SourceUserId == creatorId && r.TargetUserId == userId).First();
+                .Where(r => r.SourceUserId == sourceUserId && r.TargetUserId == targetUserId).First();
 
             if (relation is null) {
                 relation = new DbUserRelation {
-                    SourceUserId = creatorId,
-                    SourceUser = dbCreator,
-                    TargetUserId = userId,
-                    TargetUser = dbUser,
+                    SourceUserId = sourceUserId,
+                    SourceUser = dbSourceUser,
+                    TargetUserId = targetUserId,
+                    TargetUser = dbTargetUser,
                 };
                 await context.UserRelations.AddAsync(relation);
-                context.SaveChanges();
             }
 
+            var sourceMember = new DbChatMember {
+                UserId = sourceUserId,
+                User = dbSourceUser,
+                ChatId = dbChat.Id,
+                Chat = dbChat,
+            };
+
+            var targetMember = new DbChatMember {
+                UserId = targetUserId,
+                User = dbTargetUser,
+                ChatId = dbChat.Id,
+                Chat = dbChat,
+            };
+
+            await context.ChatMembers.AddRangeAsync(sourceMember, targetMember);
+
+            context.SaveChanges();
             return dbChat.Id;
         }
 
