@@ -96,6 +96,8 @@ namespace uchat_server.Services
         public async Task<Chat> GetChatByIdAsync(int chatId, int userId) {
             var dbChat = await context.Chats.FindAsync(chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
+            if (!dbChat.Members.Where(m => m.UserId == userId).Any())
+                throw new InvalidDataException("The user is not in the chat");
             if (dbChat.IsGroupChat) 
                 throw new InvalidOperationException("This chat is group chat");
             var source = await userService.GetUserByIdAsync(userId);
@@ -105,7 +107,7 @@ namespace uchat_server.Services
                     .First()
                     .UserId);
 
-            var member = await context.ChatMembers.FindAsync(target.Id, chatId)
+            var member = await context.ChatMembers.FindAsync(source.Id, chatId)
                 ?? throw new InvalidOperationException("Can't find the chat");
             
             return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked);
@@ -114,34 +116,49 @@ namespace uchat_server.Services
         public async Task<GroupChat> GetGroupChatsByIdAsync(int chatId, int userId) {
             DbChat dbChat = await context.Chats.FindAsync(chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
+            if (!dbChat.Members.Where(m => m.UserId == userId).Any())
+                throw new InvalidDataException("The user is not in the chat");
             if (!dbChat.IsGroupChat)
                 throw new InvalidOperationException("This chat is not group chat");
 
             User owner = await userService.GetUserByIdAsync((int) dbChat.OwnerId);
+
+            var member = await context.ChatMembers.FindAsync(userId, chatId)
+                ?? throw new InvalidOperationException("Can't find the chat");
+
             return new GroupChat(
                     dbChat.Id,
                     owner,
                     dbChat.Title,
+                    member.IsMuted,
+                    (await Task.WhenAll(dbChat.Members.Select(async m => await userService
+                        .GetUserByIdAsync(m.UserId)))).ToList(),
+                    dbChat.ImageUrl,
+                    dbChat.Description
                     );
-
         }
 
         public async Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId) {
-            DbUser? user = await context.Users.FindAsync(userId);
+            DbUser? user = await context.Users.FindAsync(userId)
+                ?? throw new Exception("User doesn't exist");
+            List<Chat> chats = new List<Chat>();
+            List<GroupChat> groupChats = new List<GroupChat>();
 
-            if (user is null) {
-                throw new Exception("User doesn't exist");
+            if (user.Chats is List<DbChatMember> dbChats) {
+                var groupItems = dbChats.Where(c => c.Chat.IsGroupChat);
+                var directItems = dbChats.Where(c => !c.Chat.IsGroupChat);
+
+                var groupTasks = groupItems.Select(c => GetGroupChatsByIdAsync(c.ChatId, userId));
+                var directTasks = directItems.Select(c => GetChatByIdAsync(c.ChatId, userId));
+
+                var groups = await Task.WhenAll(groupTasks);
+                var directs = await Task.WhenAll(directTasks);
+
+                groupChats.AddRange(groups);
+                chats.AddRange(directs);
             }
 
-            if (user.Chats is List<DbChatMember> chats) {
-                return chats
-                    .DefaultIfEmpty()
-                    .Where(c => c is not null)
-                    .Select(c => c.Chat)
-                    .ToList();
-            }
-
-            return new List<DbChat>();
+            return (chats, groupChats);
         }
     }
 }
