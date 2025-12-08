@@ -36,7 +36,7 @@ public class UserController(IUserService userService) : ControllerBase
         }
     }
 
-    [HttpGet("user/{userId:int}")]
+    [HttpGet("profile/{userId:int}")]
     public async Task<IActionResult> GetUserById(int userId)
     {
         try
@@ -104,7 +104,7 @@ public class UserController(IUserService userService) : ControllerBase
         }
     }
 
-    [HttpPut("user/{userId:int}/password")]
+    [HttpPut("password/{userId:int}")]
     public async Task<IActionResult> UpdatePassword(int userId, [FromBody] UpdatePasswordRequest request)
     {
         try
