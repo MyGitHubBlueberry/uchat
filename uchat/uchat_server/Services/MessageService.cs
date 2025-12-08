@@ -56,7 +56,7 @@ namespace uchat_server.Services
         {
             DbChat? dbChat = await db.Chats.FindAsync(msg.ChatId);
             if (dbChat is null) {
-                // TODO: maybe create new chat instead
+                // TODO: maybe create new chat instead, but we need id to whom the message is sent
                 throw new Exception("Can't send message in chat, that doesn't exist.");
             }
 
@@ -65,9 +65,14 @@ namespace uchat_server.Services
                 .Where(u => u.Name == msg.SenderName)
                 .FirstAsync();
 
-            DbChatMember? sender = await db.ChatMembers.FindAsync(new {user.Id, msg.ChatId});
+            DbChatMember? sender = await db.ChatMembers.FindAsync(user.Id, msg.ChatId);
             if (sender is null) {
-                throw new Exception("Chat doesn't exist");
+                sender = new DbChatMember {
+                    UserId = user.Id,
+                    User = user,
+                    ChatId = msg.ChatId,
+                };
+                await db.ChatMembers.AddAsync(sender);
             }
 
             (byte[] text, byte[] iv) = msg.Content.Encrypt(ServerSecrets.MasterKey);
@@ -80,8 +85,9 @@ namespace uchat_server.Services
                 SenderId = user.Id,
                 Sender = sender,
             };
-            
+
             await db.Messages.AddAsync(dbMsg);
+            await db.SaveChangesAsync();
         }
     }
 }

@@ -34,6 +34,7 @@ namespace uchat_server.Services
             return newChat.Id;
         }
 
+        //TODO: FIX: chat deletion don't actually removes entries from the db
         public async Task<bool> DeleteChatAsync(int chatId)
         {
             DbChat? chat = await context.Chats.FindAsync(chatId);

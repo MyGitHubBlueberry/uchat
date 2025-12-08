@@ -14,6 +14,5 @@
 
         public int? LastMessageId { get; set; }
         public DbMessage? LastMessage { get; set; }
-
     }
 }
