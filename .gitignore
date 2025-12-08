@@ -1,6 +1,7 @@
 # --- Build Results ---
 [Bb]in/
 [Oo]bj/
+wwwroot/
 
 # --- Visual Studio ---
 .vs/
