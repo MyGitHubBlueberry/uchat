@@ -6,8 +6,12 @@ using SharedLibrary.Extensions;
 
 namespace uchat_server.Services
 {
-    public class MessageService(AppDbContext db) : IMessageService
+    public class MessageService(AppDbContext db, IConfiguration configuration) : IMessageService
     {
+
+        private readonly byte[] _masterKey = Convert.FromBase64String(configuration["MasterKey"]
+                                             ?? throw new Exception("MasterKey is missing in config")
+        );
         public async Task<List<DbMessage>> GetChatMessagesAsync(int chatId, int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -44,7 +48,7 @@ namespace uchat_server.Services
                     Content = new EncryptedMessage(
                                     m.CipheredText,
                                     m.Iv
-                               ).Decrypt(ServerSecrets.MasterKey),
+                               ).Decrypt(_masterKey),
                     ChatId = m.ChatId,
                     SenderName = m.Sender != null && m.Sender.User != null ? m.Sender.User.Name : string.Empty,
                     Timestamp = m.TimeSent
@@ -75,7 +79,7 @@ namespace uchat_server.Services
                 await db.ChatMembers.AddAsync(sender);
             }
 
-            (byte[] text, byte[] iv) = msg.Content.Encrypt(ServerSecrets.MasterKey);
+            (byte[] text, byte[] iv) = msg.Content.Encrypt(_masterKey);
             DbMessage dbMsg = new DbMessage() {
                 CipheredText = text,
                 Iv = iv,

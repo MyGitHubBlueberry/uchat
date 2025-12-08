@@ -1,7 +1,6 @@
 # --- Build Results ---
 [Bb]in/
 [Oo]bj/
-wwwroot/
 
 # --- Visual Studio ---
 .vs/
@@ -23,3 +22,7 @@ wwwroot/
 
 # --- Avalonia specific ---
 !Avalonia.Themes.Default/
+
+
+# --- MasterKey ---
+appsettings.Secret.json

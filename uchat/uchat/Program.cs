@@ -29,7 +29,9 @@ sealed class Program
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile("appsettings.Secret.json", optional: true, reloadOnChange: true)
             .Build();
+            
         
         services.AddSingleton<IConfiguration>(configuration);
 

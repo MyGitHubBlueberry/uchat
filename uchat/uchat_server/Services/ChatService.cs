@@ -1,13 +1,18 @@
-﻿using System.Security.Cryptography;
-using uchat_server.Database;
-using SharedLibrary.Models;
+﻿using Microsoft.Extensions.Configuration;
 using SharedLibrary.Extensions;
+using SharedLibrary.Models;
+using System.Security.Cryptography;
+using uchat_server.Database;
 using uchat_server.Database.Models;
 
 namespace uchat_server.Services
 {
-    public class ChatService(AppDbContext context) : IChatService
+    public class ChatService(AppDbContext context, IConfiguration configuration) : IChatService
     {
+
+        private readonly byte[] _masterKey = Convert.FromBase64String(configuration["MasterKey"]
+                                             ?? throw new Exception("MasterKey is missing in config")
+        );
         private async Task<bool> ChatExistsAsync(int chatId)
         {
             return await context.FindAsync(typeof(DbChat), chatId) is not null;
@@ -19,7 +24,7 @@ namespace uchat_server.Services
 
             string keyAsString = Convert.ToBase64String(rawChatKey);
 
-            EncryptedMessage secureKeyPackage = keyAsString.Encrypt(ServerSecrets.MasterKey);
+            EncryptedMessage secureKeyPackage = keyAsString.Encrypt(_masterKey);
 
             var newChat = new DbChat
             {
@@ -68,7 +73,7 @@ namespace uchat_server.Services
                 chat.KeyIV
             );
 
-            string keyAsString = encryptedPackage.Decrypt(ServerSecrets.MasterKey);
+            string keyAsString = encryptedPackage.Decrypt(_masterKey);
 
             return Convert.FromBase64String(keyAsString) == key;
         }
