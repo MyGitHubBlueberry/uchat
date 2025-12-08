@@ -1,4 +1,4 @@
-﻿using uchat_server.Database.Models;
+﻿using SharedLibrary.Models;
 
 namespace uchat_server.Services
 {
@@ -6,8 +6,8 @@ namespace uchat_server.Services
     {
         Task<int> CreateChatRoomAsync(string chatName);
         // TODO: ADD SECRET KEY PARAMETER
-        Task<DbChat> GetChatByIdAsync(int chatId, int userId);
-        Task<List<DbChat>> GetUserChatsAsync(int userId);
+        Task<Chat> GetChatByIdAsync(int chatId, int userId);
+        Task<List<Chat>> GetUserChatsAsync(int userId);
         Task<bool> DeleteChatAsync(int chatId);
 
         //Task AddChatMemberAsync(int chatId, int userId);
