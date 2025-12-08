@@ -65,7 +65,7 @@ public class UserController(IUserService userService) : ControllerBase
         }
     }
 
-    [HttpPost("picture")]
+    [HttpPost("picture/{userId}")]
     public async Task<IActionResult> UploadProfilePicture(int userId, [FromForm] IFormFile file)
     {
         if (file is null || file.Length == 0) {
@@ -87,6 +87,19 @@ public class UserController(IUserService userService) : ControllerBase
         }
         catch (Exception ex)
         {
+            return StatusCode(500, "Internal server error: " + ex.Message);
+        }
+    }
+
+    [HttpDelete("picture/{userId}")]
+    public async Task<IActionResult> RemoveProfilePicture(int userId)
+    {
+        try {
+            await userService.RemoveProfilePicture(userId);
+            return Ok(new { Message = "User awatar was removed successfully" });
+        } catch (InvalidOperationException ex) {
+            return NotFound(ex.Message);
+        } catch (Exception ex) {
             return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }

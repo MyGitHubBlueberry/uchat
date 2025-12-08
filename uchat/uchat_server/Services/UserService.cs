@@ -118,7 +118,7 @@ namespace uchat_server.Services
             DbUser user = await context.Users.FindAsync(userId)
                 ?? throw new InvalidOperationException("Can't assign avatar to user who doesn't exist");
 
-            string folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/Files");
+            string folder = Path.Combine(Directory.GetCurrentDirectory(), Path.Combine("wwwroot", "Files"));
 
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
@@ -129,7 +129,6 @@ namespace uchat_server.Services
                 throw new InvalidDataException($"This file format ({fileInfo.Extension.Trim()}) is not supported");
             }
 
-            //todo: encrypt or randomize file name
             string uniqueFileName = Guid.NewGuid().ToString() + fileInfo.Extension.Trim();
             string diskPath = Path.Combine(folder, uniqueFileName);
 
@@ -138,7 +137,17 @@ namespace uchat_server.Services
                 await file.CopyToAsync(stream);
             }
 
-            user.ImageUrl = $"Files/{uniqueFileName}";
+            user.ImageUrl = Path.Combine("Files", uniqueFileName);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task RemoveProfilePicture(int userId) {
+            DbUser user = await context.Users.FindAsync(userId)
+                ?? throw new InvalidOperationException("Can't remove avatar from user who doesn't exist");
+            if (user.ImageUrl is null) return;
+            string path = Path.Combine(Directory.GetCurrentDirectory(), Path.Combine("wwwroot", user.ImageUrl));
+            File.Delete(path);
+            user.ImageUrl = null;
             await context.SaveChangesAsync();
         }
     }
