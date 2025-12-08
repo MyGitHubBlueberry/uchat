@@ -1,0 +1,5 @@
+<controls:StyledInputBase xmlns="https://github.com/avaloniaui"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:controls="using:uchat.Views.Controls"
+                      x:Class="uchat.Views.Controls.UserSearchBox">
+</controls:StyledInputBase>

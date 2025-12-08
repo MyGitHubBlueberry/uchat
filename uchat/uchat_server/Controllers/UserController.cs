@@ -50,18 +50,17 @@ public class UserController(IUserService userService) : ControllerBase
         }
     }
 
-    [HttpGet("search/{part}")]
-    public async Task<IActionResult> SearchUsers(string part)
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchUsers([FromQuery] string name)
     {
         try
         {
-            var users = await userService.GetUserByNameAsync(part);
+            var users = await userService.GetUserByNameAsync(name);
             return Ok(users);
         }
         catch (Exception ex)
         {
-            // Even if empty, returning an empty list is better than error for search
-            return Ok(new List<SharedLibrary.Models.User>());
+            throw new Exception("Error searching users: " + ex.Message);
         }
     }
 

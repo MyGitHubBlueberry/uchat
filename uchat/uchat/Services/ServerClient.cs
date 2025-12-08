@@ -216,4 +216,22 @@ public class ServerClient : IServerClient
             throw new Exception("Error deleting account");
         }
     }
+
+    public async Task<List<User>> SearchUsers(string partialName)
+    {
+        if (string.IsNullOrWhiteSpace(partialName))
+        {
+            return [];
+        }
+
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/user/search?name={Uri.EscapeDataString(partialName)}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<List<User>>();
+        return result ?? [];
+    }
 }

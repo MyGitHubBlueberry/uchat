@@ -12,7 +12,7 @@
         <Grid ColumnDefinitions="250, *">
 
         <Border Margin="10 10 5 10" CornerRadius="25"  Grid.Column="0" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,1,0">
-            <Grid RowDefinitions="Auto, *">
+            <Grid RowDefinitions="Auto, Auto, *">
                 <TextBlock Text="UCHAT" 
                            Foreground="White" 
                            FontWeight="Black" 
@@ -20,8 +20,65 @@
                            Margin="20" 
                            HorizontalAlignment="Center"
                            LetterSpacing="2"/>
+                <Button Grid.Column="2"
+                            Command="{Binding OpenProfileCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8"
+                            Cursor="Hand"
+                            Margin="8,8,0,8"
+                            CornerRadius="17.5"
+                            VerticalAlignment="Center">
+                    <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
+                        <TextBlock Text="{Binding UserName[0]}"
+                            VerticalAlignment="Center" 
+                            HorizontalAlignment="Center" 
+                            Foreground="White" 
+                            FontWeight="Bold"
+                            FontSize="14"/>
+                        </Border>
+                    </Button>
 
-                <StackPanel Grid.Row="1" Spacing="5" Margin="10">
+                <StackPanel Grid.Row="1" Margin="10">
+                    <controls:UserSearchBox Watermark="Search users..."
+                                            BackgroundColor="#2C303E"
+                                            PaddingValue="12,10"
+                                            CornerRadiusValue="10"
+                                            SearchText="{Binding SearchText}"
+                                            SearchResults="{Binding SearchResults}"/>
+                    
+                    <ItemsControl ItemsSource="{Binding SearchResults}" 
+                                  Margin="0,5,0,0"
+                                  IsVisible="{Binding SearchResults.Count}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#2C303E" 
+                                        CornerRadius="10" 
+                                        Padding="10" 
+                                        Margin="0,2"
+                                        Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
+                                            <TextBlock Text="{Binding Name[0]}" 
+                                                       VerticalAlignment="Center" 
+                                                       HorizontalAlignment="Center" 
+                                                       Foreground="White" 
+                                                       FontWeight="SemiBold"
+                                                       FontSize="13"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding Name}" 
+                                                   Foreground="White" 
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Spacing="5" Margin="10">
+                        
                     <Border Background="#2C303E" CornerRadius="10" Padding="10" Cursor="Hand">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <Border Width="40" Height="40" CornerRadius="20" Background="#5865F2">
@@ -56,23 +113,6 @@
                         <TextBlock VerticalAlignment="Center" Text="#" Foreground="#8899A6" FontSize="20" FontWeight="Light"/>
                         <TextBlock VerticalAlignment="Center" Text="Test Chat" Foreground="White" FontWeight="Bold" FontSize="16"/>
                     </StackPanel>
-                    
-                    <Button Grid.Column="2"
-                            Command="{Binding OpenProfileCommand}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="8"
-                            Cursor="Hand"
-                            VerticalAlignment="Center">
-                        <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
-                            <TextBlock Text="{Binding UserName[0]}"
-                                       VerticalAlignment="Center" 
-                                       HorizontalAlignment="Center" 
-                                       Foreground="White" 
-                                       FontWeight="Bold"
-                                       FontSize="14"/>
-                        </Border>
-                    </Button>
                 </Grid>
             </Border>
 

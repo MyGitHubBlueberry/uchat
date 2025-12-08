@@ -20,11 +20,13 @@ public partial class MainWindowViewModel : ViewModelBase
     
     public ObservableCollection<Chat> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
+    public ObservableCollection<User> SearchResults { get; } = new();
     
     [ObservableProperty] private Chat? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
     [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private bool _shouldScrollToBottom;
+    [ObservableProperty] private string _searchText = string.Empty;
     
     public MainWindowViewModel(IServerClient serverClient, IUserSession userSession)
     {
@@ -145,5 +147,23 @@ public partial class MainWindowViewModel : ViewModelBase
     private void OpenProfile()
     {
         ProfileRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private async Task SearchUsers(string partialName)
+    {
+        SearchResults.Clear();
+
+        if (string.IsNullOrWhiteSpace(partialName))
+        {
+            return;
+        }
+
+        var users = await _serverClient.SearchUsers(partialName);
+        
+        foreach (var user in users)
+        {
+            SearchResults.Add(user);
+        }
     }
 }

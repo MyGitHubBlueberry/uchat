@@ -91,7 +91,7 @@ namespace uchat_server.Services
         {
             if (string.IsNullOrWhiteSpace(partialName))
             {
-                return new List<SharedLibrary.Models.User>();
+                return [];
             }
 
             var dbUsers = await context.Users
@@ -99,12 +99,12 @@ namespace uchat_server.Services
                 .Take(10) // Limit to 10 results
                 .ToListAsync();
 
-            return dbUsers.Select(u => new SharedLibrary.Models.User
+            return [.. dbUsers.Select(u => new SharedLibrary.Models.User
             {
                 Id = u.Id,
                 Name = u.Name,
                 Image = u.ImageUrl 
-            }).ToList();
+            })];
         }
 
         private static string GenerateUserToken()
