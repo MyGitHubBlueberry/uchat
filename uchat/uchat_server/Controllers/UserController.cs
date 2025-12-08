@@ -22,12 +22,13 @@ public class UserController(IUserService userService) : ControllerBase
         }
     }
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    [HttpGet("login")]
+    public async Task<IActionResult> Login([FromQuery] LoginRequest request)
     {
         try
         {
             var response = await userService.LoginAsync(request);
+
             return Ok(response);
         }
         catch (Exception ex)

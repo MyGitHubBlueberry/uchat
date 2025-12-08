@@ -30,8 +30,6 @@ public partial class MainWindowViewModel : ViewModelBase
         // TODO: remove mock or make as default username (as it on reddit btw ?)
         _userName = _userSession.CurrentUser?.Name;
 
-        _serverClient.RegisterNotificationCallback(OnMessageReceived);
-
         Messages.CollectionChanged += OnMessagesCollectionChanged;
 
         _ = InitializeAsync();

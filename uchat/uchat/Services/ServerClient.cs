@@ -1,22 +1,29 @@
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
+using SharedLibrary.Models;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR.Client;
-using SharedLibrary.Models;
-using Microsoft.Extensions.Configuration;
 using uchat.Services;
 
 namespace uchat;
 
 public class ServerClient : IServerClient
 {
-    private readonly HubConnection _connection;
+    private HubConnection? _connection;
     private readonly HttpClient _httpClient;
+    private int? _currentUserId;
     private readonly IUserSession _userSession;
     private readonly string _serverUrl;
-    
+
+    public bool IsConnected => _connection?.State == HubConnectionState.Connected;
+    public int? CurrentUserId => _currentUserId;
+
+    public event Action<Message>? OnMessageReceived;
+    public event Action? OnDisconnected;
+
     public ServerClient(IConfiguration configuration, IUserSession userSession)
     {
         _userSession = userSession;
@@ -24,54 +31,46 @@ public class ServerClient : IServerClient
         
         _httpClient = new HttpClient();
 
-        _connection = new HubConnectionBuilder()
-            .WithUrl($"{_serverUrl}/chatHub")
-            .WithAutomaticReconnect()
-            .Build();
-
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await _connection.StartAsync();
-                await _connection.InvokeAsync("JoinChat", "1");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to connect to server: {ex.Message}");
-            }
-        });
+        _httpClient.BaseAddress = new Uri(_serverUrl);
     }
-    
+
+    public async Task<bool> UserLogin(string username, string password)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/api/user/login?username={Uri.EscapeDataString(username)}&password={Uri.EscapeDataString(password)}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            var loginResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+            if (loginResponse == null)
+            {
+                return false;
+            }
+
+            _currentUserId = loginResponse.Id;
+
+            await ConnectToHubAsync();
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public async Task UserRegistration(string username, string password)
     {
         // TODO: Implement actual server registration when UserController is ready
         // For now, simulate a successful registration
         await Task.Delay(500);
-        
+
         Console.WriteLine($"Mock registration: {username}");
-    }
-
-    public async Task<bool> UserLogin(string username, string password)
-    {
-        // TODO: Implement actual server authentication when UserController is ready
-        // For now, simulate successful login
-        await Task.Delay(500);
-
-        var mockUser = new User()
-        {
-            Name = username,
-            Image = null,
-            Friends = [],
-            Chats = [],
-            GroupChats = []
-        };
-        
-        _userSession.CurrentUser = mockUser;
-        _userSession.AuthToken = $"mock_token_{Guid.NewGuid()}";
-        
-        Console.WriteLine($"Mock login successful: {username}");
-        return true;
     }
 
     public async Task SendMessage(Message mes, int chatId)
@@ -149,11 +148,35 @@ public class ServerClient : IServerClient
         return [mockChat];
     }
 
-    public void RegisterNotificationCallback(Action<Message> onMessageReceived)
+    private async Task ConnectToHubAsync()
     {
-        _connection.On<Message>("ReceiveMessage", (msg) =>
+        if (_connection != null)
         {
-            onMessageReceived?.Invoke(msg);
+            await _connection.DisposeAsync();
+        }
+
+        _connection = new HubConnectionBuilder()
+            .WithUrl($"{_serverUrl}/chatHub")
+            .WithAutomaticReconnect()
+            .Build();
+
+        _connection.On<Message>("ReceiveMessage", (message) =>
+        {
+            OnMessageReceived?.Invoke(message);
         });
+
+        _connection.Closed += error =>
+        {
+            Console.WriteLine($"Connection closed: {error?.Message}");
+            OnDisconnected?.Invoke();
+            return Task.CompletedTask;
+        };
+
+        await _connection.StartAsync();
+
+        if (_currentUserId.HasValue)
+        {
+            await _connection.InvokeAsync("SubscribeUser", _currentUserId.Value);
+        }
     }
 }
