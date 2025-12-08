@@ -32,9 +32,9 @@ public class ChatController(IChatService chatService) : ControllerBase
 
     // ADDED SECRET KEY PARAMETER
     [HttpGet("{chatId}")]
-    public IActionResult GetChatById(int chatId, [FromBody] byte[] key) {
+    public IActionResult GetChatById(int chatId, [FromQuery] int userId) {
         try {
-            return Ok(chatService.GetChatByIdAsync(chatId, key));
+            return Ok(chatService.GetChatByIdAsync(chatId, userId));
         } catch (Exception ex) {
             return BadRequest(ex.Message);
         }

@@ -75,6 +75,7 @@ namespace uchat_server.Services
                     UserId = user.Id,
                     User = user,
                     ChatId = msg.ChatId,
+                    Chat = dbChat
                 };
                 await db.ChatMembers.AddAsync(sender);
             }
