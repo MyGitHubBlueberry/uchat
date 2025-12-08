@@ -117,4 +117,18 @@ public class UserController(IUserService userService) : ControllerBase
             return BadRequest(new { Error = ex.Message });
         }
     }
+
+    [HttpDelete("{userId:int}")]
+    public async Task<IActionResult> DeleteAccount(int userId)
+    {
+        try
+        {
+            await userService.DeleteUserAsync(userId);
+            return Ok(new { Message = "Account deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
 }

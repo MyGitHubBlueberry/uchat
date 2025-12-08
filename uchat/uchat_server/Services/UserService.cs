@@ -164,5 +164,19 @@ namespace uchat_server.Services
             user.Password = request.NewPassword;
             await context.SaveChangesAsync();
         }
+
+        public async Task DeleteUserAsync(int userId)
+        {
+            var user = await context.Users.FindAsync(userId);
+            if (user == null) throw new Exception("User not found.");
+
+            // Check db conf, 
+            
+            // Clean up avatar file if exists
+            await RemoveProfilePicture(userId);
+
+            context.Users.Remove(user);
+            await context.SaveChangesAsync();
+        }
     }
 }

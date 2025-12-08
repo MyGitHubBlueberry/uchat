@@ -12,5 +12,6 @@ namespace uchat_server.Services
         Task UploadProfilePicture(int userId, IFormFile file);
         Task RemoveProfilePicture(int userId);
         Task UpdatePasswordAsync(int userId, UpdatePasswordRequest request);
+        Task DeleteUserAsync(int userId);
     }
 }
