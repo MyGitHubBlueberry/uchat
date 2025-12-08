@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using uchat_server.Database;
 using uchat_server.Database.Models;
 using uchat_server.Models;
+using BCrypt.Net;
 
 namespace uchat_server.Services
 {
@@ -26,10 +27,12 @@ namespace uchat_server.Services
                 throw new Exception("Username is already taken.");
             }
 
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
             var newUser = new DbUser
             {
                 Name = request.Username,
-                Password = request.Password,
+                Password = passwordHash,
                 ImageUrl = null 
             };
 
@@ -55,8 +58,10 @@ namespace uchat_server.Services
                 throw new Exception("User not found.");
             }
 
+            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+
             // Checking password with DIRECT COMPARISON for now
-            if (user.Password != request.Password)
+            if (!isPasswordCorrect)
             {
                 throw new Exception("Invalid password.");
             }
@@ -155,13 +160,18 @@ namespace uchat_server.Services
         {
             var user = await context.Users.FindAsync(userId);
             if (user == null) throw new Exception("User not found.");
-
-            if (!(request.CurrentPassword is null) && user.Password != request.CurrentPassword)
+            if (request.CurrentPassword != null)
             {
-                throw new Exception("Current password is incorrect.");
-            }
+                bool isCurrentCorrect = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.Password);
 
-            user.Password = request.NewPassword;
+                if (!isCurrentCorrect)
+                {
+                    throw new Exception("Current password is incorrect.");
+                }
+            }
+            
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await context.SaveChangesAsync();
         }
 
