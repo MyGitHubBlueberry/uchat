@@ -24,7 +24,8 @@ namespace uchat_server.Services
             var newChat = new DbChat
             {
                 EncryptedKey = secureKeyPackage.cipheredText,
-                KeyIV = secureKeyPackage.iv
+                KeyIV = secureKeyPackage.iv,
+                Title = chatName,
             };
 
             await context.Chats.AddAsync(newChat);
