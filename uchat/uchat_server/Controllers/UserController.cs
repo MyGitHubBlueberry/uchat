@@ -103,4 +103,18 @@ public class UserController(IUserService userService) : ControllerBase
             return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }
+
+    [HttpPut("user/{userId:int}/password")]
+    public async Task<IActionResult> UpdatePassword(int userId, [FromBody] UpdatePasswordRequest request)
+    {
+        try
+        {
+            await userService.UpdatePasswordAsync(userId, request);
+            return Ok(new { Message = "Password updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
 }

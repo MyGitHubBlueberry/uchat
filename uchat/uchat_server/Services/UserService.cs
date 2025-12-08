@@ -150,5 +150,19 @@ namespace uchat_server.Services
             user.ImageUrl = null;
             await context.SaveChangesAsync();
         }
+
+        public async Task UpdatePasswordAsync(int userId, UpdatePasswordRequest request)
+        {
+            var user = await context.Users.FindAsync(userId);
+            if (user == null) throw new Exception("User not found.");
+
+            if (!(request.CurrentPassword is null) && user.Password != request.CurrentPassword)
+            {
+                throw new Exception("Current password is incorrect.");
+            }
+
+            user.Password = request.NewPassword;
+            await context.SaveChangesAsync();
+        }
     }
 }
