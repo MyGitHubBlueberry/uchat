@@ -3,10 +3,7 @@ using SharedLibrary.Models;
 using System.Security.Cryptography;
 using uchat_server.Database;
 using uchat_server.Database.Models;
-using System.Data.Entity;
 using Microsoft.EntityFrameworkCore;
-
-//TODO: change this to return Chat or GroupChat
 
 namespace uchat_server.Services
 {
@@ -17,11 +14,13 @@ namespace uchat_server.Services
                                              ?? throw new Exception("MasterKey is missing in config")
         );
 
-        private async Task<bool> ChatExistsAsync(int chatId) {
+        private async Task<bool> ChatExistsAsync(int chatId)
+        {
             return await context.FindAsync(typeof(DbChat), chatId) is not null;
         }
 
-        public async Task<int> CreateChatAsync(int sourceUserId, int targetUserId) {
+        public async Task<int> CreateChatAsync(int sourceUserId, int targetUserId)
+        {
             byte[] rawChatKey = Aes.Create().Key;
             string keyAsString = Convert.ToBase64String(rawChatKey);
             EncryptedMessage secureKeyPackage = keyAsString.Encrypt(masterKey);
@@ -41,7 +40,8 @@ namespace uchat_server.Services
             if (chatExists)
                 throw new InvalidOperationException("Chat already exists");
 
-            var dbChat = new DbChat {
+            var dbChat = new DbChat
+            {
                 EncryptedKey = secureKeyPackage.cipheredText,
                 KeyIV = secureKeyPackage.iv,
                 Title = dbTargetUser.Name,
@@ -52,8 +52,10 @@ namespace uchat_server.Services
             DbUserRelation? relation = context.UserRelations
                 .Where(r => r.SourceUserId == sourceUserId && r.TargetUserId == targetUserId).First();
 
-            if (relation is null) {
-                relation = new DbUserRelation {
+            if (relation is null)
+            {
+                relation = new DbUserRelation
+                {
                     SourceUserId = sourceUserId,
                     SourceUser = dbSourceUser,
                     TargetUserId = targetUserId,
@@ -62,14 +64,16 @@ namespace uchat_server.Services
                 await context.UserRelations.AddAsync(relation);
             }
 
-            var sourceMember = new DbChatMember {
+            var sourceMember = new DbChatMember
+            {
                 UserId = sourceUserId,
                 User = dbSourceUser,
                 ChatId = dbChat.Id,
                 Chat = dbChat,
             };
 
-            var targetMember = new DbChatMember {
+            var targetMember = new DbChatMember
+            {
                 UserId = targetUserId,
                 User = dbTargetUser,
                 ChatId = dbChat.Id,
@@ -82,14 +86,15 @@ namespace uchat_server.Services
             return dbChat.Id;
         }
 
-        public async Task<int> CreateGroupChatAsync(string chatName, int creatorId, string? description, string? imageUrl, params int[] userIds) {
+        public async Task<int> CreateGroupChatAsync(string chatName, int creatorId, string? description, string? imageUrl, params int[] userIds)
+        {
             byte[] rawChatKey = Aes.Create().Key;
             string keyAsString = Convert.ToBase64String(rawChatKey);
             EncryptedMessage secureKeyPackage = keyAsString.Encrypt(masterKey);
 
-            DbUser dbUser = await context.Users.FindAsync(creatorId) 
+            DbUser dbUser = await context.Users.FindAsync(creatorId)
                 ?? throw new InvalidOperationException("Can't create group chat for user that doesn't exist");
-            
+
             DbChat dbChat = new DbChat
             {
                 Title = chatName,
@@ -101,31 +106,87 @@ namespace uchat_server.Services
                 Owner = dbUser,
             };
 
-            //add users as members
-            //add user relations
-            //add chat members
-            //save image
+            // TODO: save image if exists
+
+            if (userIds.Length != 0)
+            {
+                var dbUsers = context.Users
+                    .Where(u => userIds.Contains(u.Id))
+                    .Append(dbUser)
+                    .DistinctBy(u => u.Id)
+                    .ToList();
+
+                var members = dbUsers.Select(u => new DbChatMember
+                {
+                    UserId = u.Id,
+                    User = u,
+                    ChatId = dbChat.Id,
+                    Chat = dbChat,
+                });
+
+                var existingRelations = new HashSet<(int, int)>(
+                        (await context.UserRelations
+                            .Where(r => userIds.Contains(r.TargetUserId)
+                                    && userIds.Contains(r.SourceUserId)).ToListAsync()
+                            ).Select(r => (r.SourceUserId, r.TargetUserId)));
+
+                await context.UserRelations.AddRangeAsync(
+                    GetMissingRelations(dbUsers, existingRelations)
+                );
+
+                await context.ChatMembers.AddRangeAsync(members);
+                dbChat.Members.AddRange(members);
+            }
 
             await context.Chats.AddAsync(dbChat);
             context.SaveChanges();
+            
+            return dbChat.Id;
         }
 
-        public async Task<bool> DeleteChatAsync(int chatId) {
+        private List<DbUserRelation> GetMissingRelations(List<DbUser> dbUsers, HashSet<(int, int)> existingPairs)
+        {
+            List<DbUserRelation> newRelations = new List<DbUserRelation>();
+            foreach (var source in dbUsers)
+            {
+                foreach (var target in dbUsers)
+                {
+                    if (source.Id == target.Id ||
+                          existingPairs.Contains((source.Id, target.Id))) continue;
+
+                    newRelations.Add(new DbUserRelation
+                    {
+                        SourceUserId = source.Id,
+                        SourceUser = source,
+                        TargetUserId = target.Id,
+                        TargetUser = target
+                    });
+
+                    existingPairs.Add((source.Id, target.Id));
+                }
+            }
+            return newRelations;
+        }
+
+        public async Task<bool> DeleteChatAsync(int chatId)
+        {
             DbChat? chat = await context.Chats.FindAsync(chatId);
-            if (chat is not null) {
+            if (chat is not null)
+            {
                 context.Chats.Remove(chat);
                 context.SaveChanges();
                 return true;
-            } 
+            }
             return false;
         }
-        
-        public async Task<Chat> GetChatByIdAsync(int chatId, int userId) {
+
+        public async Task<Chat> GetChatByIdAsync(int chatId, int userId)
+        {
             var dbChat = await context.Chats.FindAsync(chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
             if (!dbChat.Members.Where(m => m.UserId == userId).Any())
                 throw new InvalidDataException("The user is not in the chat");
-            if (dbChat.IsGroupChat) 
+            if (dbChat.IsGroupChat)
                 throw new InvalidOperationException("This chat is group chat");
             var source = await userService.GetUserByIdAsync(userId);
             var target = await userService.GetUserByIdAsync(dbChat
@@ -136,11 +197,12 @@ namespace uchat_server.Services
 
             var member = await context.ChatMembers.FindAsync(source.Id, chatId)
                 ?? throw new InvalidOperationException("Can't find the chat");
-            
+
             return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked);
         }
 
-        public async Task<GroupChat> GetGroupChatsByIdAsync(int chatId, int userId) {
+        public async Task<GroupChat> GetGroupChatsByIdAsync(int chatId, int userId)
+        {
             DbChat dbChat = await context.Chats.FindAsync(chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
             if (!dbChat.Members.Where(m => m.UserId == userId).Any())
@@ -148,7 +210,7 @@ namespace uchat_server.Services
             if (!dbChat.IsGroupChat)
                 throw new InvalidOperationException("This chat is not group chat");
 
-            User owner = await userService.GetUserByIdAsync((int) dbChat.OwnerId);
+            User owner = await userService.GetUserByIdAsync((int)dbChat.OwnerId);
 
             var member = await context.ChatMembers.FindAsync(userId, chatId)
                 ?? throw new InvalidOperationException("Can't find the chat");
@@ -159,19 +221,21 @@ namespace uchat_server.Services
                     dbChat.Title,
                     member.IsMuted,
                     (await Task.WhenAll(dbChat.Members.Select(async m => await userService
-                        .GetUserByIdAsync(m.UserId)))).ToList(),
+                                                              .GetUserByIdAsync(m.UserId)))).ToList(),
                     dbChat.ImageUrl,
                     dbChat.Description
                     );
         }
 
-        public async Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId) {
+        public async Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId)
+        {
             DbUser? user = await context.Users.FindAsync(userId)
                 ?? throw new Exception("User doesn't exist");
             List<Chat> chats = new List<Chat>();
             List<GroupChat> groupChats = new List<GroupChat>();
 
-            if (user.Chats is List<DbChatMember> dbChats) {
+            if (user.Chats is List<DbChatMember> dbChats)
+            {
                 var groupItems = dbChats.Where(c => c.Chat.IsGroupChat);
                 var directItems = dbChats.Where(c => !c.Chat.IsGroupChat);
 
