@@ -51,11 +51,28 @@
 
         <Grid Grid.Column="1" RowDefinitions="60, *, 70">
             <Border CornerRadius="25" Padding="20 0" Margin="5, 10, 10, 10" Grid.Row="0" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,0,1">
-                <Grid ColumnDefinitions="Auto, *">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" Grid.Column="0">
                         <TextBlock VerticalAlignment="Center" Text="#" Foreground="#8899A6" FontSize="20" FontWeight="Light"/>
                         <TextBlock VerticalAlignment="Center" Text="Test Chat" Foreground="White" FontWeight="Bold" FontSize="16"/>
                     </StackPanel>
+                    
+                    <Button Grid.Column="2"
+                            Command="{Binding OpenProfileCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8"
+                            Cursor="Hand"
+                            VerticalAlignment="Center">
+                        <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
+                            <TextBlock Text="{Binding UserName[0]}"
+                                       VerticalAlignment="Center" 
+                                       HorizontalAlignment="Center" 
+                                       Foreground="White" 
+                                       FontWeight="Bold"
+                                       FontSize="14"/>
+                        </Border>
+                    </Button>
                 </Grid>
             </Border>
 

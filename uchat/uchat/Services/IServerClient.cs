@@ -16,4 +16,8 @@ public interface IServerClient
     Task<User> GetUserInfo(int chatId, int messageId);
     Task<Chat[]> GetChats();
     void RegisterNotificationCallback(Action<Message> msg);
+    Task UploadProfilePicture(int userId, string filePath);
+    Task RemoveProfilePicture(int userId);
+    Task UpdatePassword(int userId, string? currentPassword, string newPassword);
+    Task DeleteAccount(int userId);
 }

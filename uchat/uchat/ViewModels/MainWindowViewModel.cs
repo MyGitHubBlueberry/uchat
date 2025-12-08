@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,6 +16,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IServerClient _serverClient;
     private readonly IUserSession _userSession;
     
+    public ICommand OpenProfileCommand { get; }
+    
     public ObservableCollection<Chat> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
     
@@ -27,15 +30,18 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _serverClient = serverClient;
         _userSession = userSession;
-        // TODO: remove mock or make as default username (as it on reddit btw ?)
-        _userName = _userSession.CurrentUser?.Name;
+        _userName = _userSession.CurrentUser?.Name ?? string.Empty;
 
         _serverClient.RegisterNotificationCallback(OnMessageReceived);
 
         Messages.CollectionChanged += OnMessagesCollectionChanged;
+        
+        OpenProfileCommand = new RelayCommand(OpenProfile);
 
         _ = InitializeAsync();
     }
+    
+    public event EventHandler? ProfileRequested;
 
     private int _currentPage = 0;
     private const int PageSize = 50;
@@ -134,5 +140,10 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Messages.Add(CreateMessageViewModel(msg));
         });
+    }
+    
+    private void OpenProfile()
+    {
+        ProfileRequested?.Invoke(this, EventArgs.Empty);
     }
 }

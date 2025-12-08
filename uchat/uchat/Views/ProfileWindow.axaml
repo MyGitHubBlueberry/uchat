@@ -1,0 +1,186 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:uchat.ViewModels"
+        xmlns:controls="using:uchat.Views.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="700"
+        x:Class="uchat.Views.ProfileWindow"
+        x:DataType="vm:ProfileViewModel"
+        Width="500"
+        Height="700"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        ExtendClientAreaToDecorationsHint="True"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent">
+
+    <Panel>
+        <Panel Background="#80000000" 
+               PointerPressed="OnBackgroundClicked"/>
+        
+        <Border CornerRadius="15" 
+                Background="#17212b" 
+                Margin="20"
+                BoxShadow="0 8 32 #40000000">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="20" Margin="30">
+                
+                <TextBlock Text="Profile" 
+                           Foreground="White" 
+                           FontSize="28" 
+                           FontWeight="Bold" 
+                           HorizontalAlignment="Center"
+                           Margin="0,10,0,20"/>
+
+                <StackPanel Spacing="15" HorizontalAlignment="Center">
+                    <Border Width="120" 
+                            Height="120" 
+                            CornerRadius="60" 
+                            Background="#5865F2"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding Username[0]}" 
+                                   VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center" 
+                                   Foreground="White" 
+                                   FontWeight="Bold" 
+                                   FontSize="48"/>
+                    </Border>
+
+                    <TextBlock Text="{Binding Username}" 
+                               Foreground="White" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Profile Picture" 
+                               Foreground="#8899A6" 
+                               FontSize="14" 
+                               FontWeight="SemiBold"/>
+                    
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Upload Picture" 
+                                Command="{Binding UploadPictureCommand}"
+                                Background="#5865F2"
+                                Foreground="White"
+                                Padding="15,8"
+                                CornerRadius="8"
+                                FontWeight="SemiBold"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
+                        
+                        <Button Content="Remove Picture" 
+                                Command="{Binding RemovePictureCommand}"
+                                Background="#ED4245"
+                                Foreground="White"
+                                Padding="15,8"
+                                CornerRadius="8"
+                                FontWeight="SemiBold"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Height="1" Background="#2F3136" Margin="0,10"/>
+
+                <StackPanel Spacing="15">
+                    <TextBlock Text="Change Password" 
+                               Foreground="#8899A6" 
+                               FontSize="14" 
+                               FontWeight="SemiBold"/>
+
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Current Password" 
+                                   Foreground="#DCDDDE" 
+                                   FontSize="12"/>
+                        <controls:StyledPasswordBox Password="{Binding CurrentPassword}"
+                                                    Watermark="Enter current password"
+                                                    BackgroundColor="#2F3136"
+                                                    CornerRadiusValue="8"
+                                                    PaddingValue="12"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="New Password" 
+                                   Foreground="#DCDDDE" 
+                                   FontSize="12"/>
+                        <controls:StyledPasswordBox Password="{Binding NewPassword}"
+                                                    Watermark="Enter new password"
+                                                    BackgroundColor="#2F3136"
+                                                    CornerRadiusValue="8"
+                                                    PaddingValue="12"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Confirm New Password" 
+                                   Foreground="#DCDDDE" 
+                                   FontSize="12"/>
+                        <controls:StyledPasswordBox Password="{Binding ConfirmPassword}"
+                                                    Watermark="Confirm new password"
+                                                    BackgroundColor="#2F3136"
+                                                    CornerRadiusValue="8"
+                                                    PaddingValue="12"/>
+                    </StackPanel>
+
+                    <Button Content="Update Password" 
+                            Command="{Binding UpdatePasswordCommand}"
+                            Background="#5865F2"
+                            Foreground="White"
+                            Padding="15,10"
+                            CornerRadius="8"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            HorizontalAlignment="Stretch"
+                            Cursor="Hand"/>
+                </StackPanel>
+
+                <Border Height="1" Background="#2F3136" Margin="0,10"/>
+
+                <StackPanel Spacing="15">
+                    <TextBlock Text="Danger Zone" 
+                               Foreground="#ED4245" 
+                               FontSize="14" 
+                               FontWeight="SemiBold"/>
+
+                    <Button Content="Delete Account" 
+                            Command="{Binding DeleteAccountCommand}"
+                            Background="#ED4245"
+                            Foreground="White"
+                            Padding="15,10"
+                            CornerRadius="8"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            HorizontalAlignment="Stretch"
+                            Cursor="Hand"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding StatusMessage}" 
+                           Foreground="#FAA61A"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Center" 
+                            Spacing="10"
+                            Margin="0,10,0,0">
+                    <Button Content="Close" 
+                            Command="{Binding CloseCommand}"
+                            Background="#2F3136"
+                            Foreground="White"
+                            Padding="30,10"
+                            CornerRadius="8"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            Cursor="Hand"/>
+                </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Panel>
+</Window>
