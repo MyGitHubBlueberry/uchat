@@ -8,6 +8,8 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using SharedLibrary.Models;
 using uchat.Services;
+using Avalonia.Platform.Storage;
+using System.Linq;
 
 namespace uchat.ViewModels;
 
@@ -21,6 +23,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<Chat> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
     public ObservableCollection<User> SearchResults { get; } = new();
+    public ObservableCollection<string> AttachedImages { get; } = new();
     
     [ObservableProperty] private Chat? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
@@ -75,19 +78,60 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task Send()
     {
-        if (string.IsNullOrWhiteSpace(MessageText) || SelectedChat == null) return;
+        if ((string.IsNullOrWhiteSpace(MessageText) && AttachedImages.Count == 0) || SelectedChat == null) return;
 
         var msg = new Message
         {
-            Content = MessageText,
+            Content = MessageText ?? string.Empty,
             SenderName = UserName,
             ChatId = SelectedChat.id,
             Timestamp = DateTime.UtcNow
         };
 
         MessageText = "";
+
+        await _serverClient.SendMessage(msg, SelectedChat.id, AttachedImages.Count > 0 ? AttachedImages.ToList() : null);
         
-        await _serverClient.SendMessage(msg, SelectedChat.id);
+        if (AttachedImages.Count > 0)
+        {
+            AttachedImages.Clear();
+        }
+    }
+
+    [RelayCommand]
+    private async Task AttachImages()
+    {
+        var topLevel = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = topLevel?.MainWindow;
+
+        if (mainWindow == null) return;
+
+        var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select Images",
+            AllowMultiple = true,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Images")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"]
+                }
+            }
+        });
+
+        foreach (var file in files)
+        {
+            if (file.TryGetLocalPath() is string path)
+            {
+                AttachedImages.Add(path);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveAttachment(string path)
+    {
+        AttachedImages.Remove(path);
     }
     
     [RelayCommand]

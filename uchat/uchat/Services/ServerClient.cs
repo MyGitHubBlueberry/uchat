@@ -75,11 +75,40 @@ public class ServerClient : IServerClient
         return true;
     }
 
-    public async Task SendMessage(Message mes, int chatId)
+    public async Task SendMessage(Message mes, int chatId, List<string>? imagePaths = null)
     {
         mes.ChatId = chatId;
+
+        using var form = new MultipartFormDataContent();
         
-        var response = await _httpClient.PostAsJsonAsync($"{_serverUrl}/api/message", mes);
+        var messageJson = System.Text.Json.JsonSerializer.Serialize(mes);
+        form.Add(new StringContent(messageJson), "messageJson");
+
+        if (imagePaths != null && imagePaths.Count > 0)
+        {
+            foreach (var imagePath in imagePaths)
+            {
+                if (File.Exists(imagePath))
+                {
+                    var fileStream = File.OpenRead(imagePath);
+                    var streamContent = new StreamContent(fileStream);
+                    string extension = Path.GetExtension(imagePath).ToLowerInvariant();
+                    string contentType = extension switch
+                    {
+                        ".jpg" or ".jpeg" => "image/jpeg",
+                        ".png" => "image/png",
+                        ".gif" => "image/gif",
+                        ".bmp" => "image/bmp",
+                        // TODO: REVIEW?
+                        _ => "application/octet-stream"
+                    };
+                    streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+                    form.Add(streamContent, "files", Path.GetFileName(imagePath));
+                }
+            }
+        }
+
+        var response = await _httpClient.PostAsync($"{_serverUrl}/api/message", form);
         
         if (!response.IsSuccessStatusCode)
         {
