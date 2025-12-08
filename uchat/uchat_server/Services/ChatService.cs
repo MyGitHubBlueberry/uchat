@@ -50,32 +50,13 @@ namespace uchat_server.Services
             return false;
         }
         
-        // ADDED SECRET KEY PARAMETER
-        public async Task<DbChat> GetChatByIdAsync(int chatId, byte[] key)
+        public async Task<DbChat> GetChatByIdAsync(int chatId, int userId)
         {
-            // VALIDATE KEY WITH GetChatKeyAsync(), THEN RETURN CHAT IF VALID, OTHWERSISE THROW EXCEPTION 403
-            DbChat? chat = await context.Chats.FindAsync(chatId);
-            if (chat is not null && ValidateChatKeyAsync(chat, key)) {
-                return chat;
+            var members = await context.ChatMembers.FindAsync(userId, chatId);
+            if (members is not null) {
+                return members.Chat;
             }
-            throw new Exception(System.Net.HttpStatusCode.Forbidden.ToString());
-        }
-
-        private bool ValidateChatKeyAsync(DbChat chat, byte[] key)
-        {
-            if (chat is null) {
-                throw new Exception("Chat not found");
-            }
-
-            var encryptedPackage = new EncryptedMessage
-            (
-                chat.EncryptedKey,
-                chat.KeyIV
-            );
-
-            string keyAsString = encryptedPackage.Decrypt(_masterKey);
-
-            return Convert.FromBase64String(keyAsString) == key;
+            throw new Exception("User doesn't have chat acess");
         }
 
         public async Task<List<DbChat>> GetUserChatsAsync(int userId)
