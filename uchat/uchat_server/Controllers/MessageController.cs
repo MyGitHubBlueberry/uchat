@@ -28,4 +28,6 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
     {
         return await messageService.GetChatMessagesDtoAsync(chatId, pageNumber, pageSize);
     }
+
+    // TODO: add save message
 }

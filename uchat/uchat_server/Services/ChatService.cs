@@ -43,34 +43,33 @@ namespace uchat_server.Services
             return false;
         }
         
-        // TODO: ADD SECRET KEY PARAMETER
-        public async Task<DbChat?> GetChatByIdAsync(int chatId)
+        // ADDED SECRET KEY PARAMETER
+        public async Task<DbChat> GetChatByIdAsync(int chatId, byte[] key)
         {
-            // TODO: VALIDATE KEY WITH GetChatKeyAsync(), THEN RETURN CHAT IF VALID, OTHWERSISE THROW EXCEPTION 403
-            return await context.Chats.FindAsync(chatId);
+            // VALIDATE KEY WITH GetChatKeyAsync(), THEN RETURN CHAT IF VALID, OTHWERSISE THROW EXCEPTION 403
+            DbChat? chat = await context.Chats.FindAsync(chatId);
+            if (chat is not null && ValidateChatKeyAsync(chat, key)) {
+                return chat;
+            }
+            throw new Exception(System.Net.HttpStatusCode.Forbidden.ToString());
         }
 
-        // TODO: MAKE THIS TO VALIDATE KEY NOT JUST RETURN
-        // TODO: make this return bool (isValid?)
-        // private byte[] GetChatKeyAsync(int chatId)
-        // {
-            // TODO: USE EXISTING EXISTS METHOD
-            // DbChat? chat = context.Chats.FindAsync(chatId);
+        private bool ValidateChatKeyAsync(DbChat chat, byte[] key)
+        {
+            if (chat is null) {
+                throw new Exception("Chat not found");
+            }
 
-            // if (chat is null) {
-            //     throw new Exception("Chat not found");
-            // }
+            var encryptedPackage = new EncryptedMessage
+            (
+                chat.EncryptedKey,
+                chat.KeyIV
+            );
 
-            // var encryptedPackage = new EncryptedMessage
-            // (
-            //     chat.EncryptedKey,
-            //     chat.KeyIV
-            // );
+            string keyAsString = encryptedPackage.Decrypt(ServerSecrets.MasterKey);
 
-            // string keyAsString = encryptedPackage.Decrypt(ServerSecrets.MasterKey);
-
-            // return Convert.FromBase64String(keyAsString);
-        // }
+            return Convert.FromBase64String(keyAsString) == key;
+        }
 
         public async Task<List<DbChat>> GetUserChatsAsync(int userId)
         {

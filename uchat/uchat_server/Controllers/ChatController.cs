@@ -30,11 +30,11 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-    // TODO: ADD SECRET KEY PARAMETER
+    // ADDED SECRET KEY PARAMETER
     [HttpGet("{chatId}")]
-    public IActionResult GetChatById(int chatId) {
+    public IActionResult GetChatById(int chatId, byte[] key) {
         try {
-            return Ok(chatService.GetChatByIdAsync(chatId));
+            return Ok(chatService.GetChatByIdAsync(chatId, key));
         } catch (Exception ex) {
             return BadRequest(ex.Message);
         }
