@@ -7,16 +7,16 @@ namespace uchat_server.Services
 {
     public class UserService : IUserService
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext context;
 
         public UserService(AppDbContext context)
         {
-            _context = context;
+            this.context = context;
         }
 
         public async Task<bool> UserExistsAsync(string username)
         {
-            return await _context.Users.AnyAsync(u => u.Name == username);
+            return await context.Users.AnyAsync(u => u.Name == username);
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterUserRequest request)
@@ -33,8 +33,8 @@ namespace uchat_server.Services
                 ImageUrl = null 
             };
 
-            _context.Users.Add(newUser);
-            await _context.SaveChangesAsync();
+            context.Users.Add(newUser);
+            await context.SaveChangesAsync();
 
             return new AuthResponse
             {
@@ -47,7 +47,7 @@ namespace uchat_server.Services
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            var user = await _context.Users
+            var user = await context.Users
                 .FirstOrDefaultAsync(u => u.Name == request.Username);
 
             if (user == null)
@@ -72,7 +72,7 @@ namespace uchat_server.Services
 
         public async Task<SharedLibrary.Models.User> GetUserByIdAsync(int userId)
         {
-            var dbUser = await _context.Users.FindAsync(userId);
+            var dbUser = await context.Users.FindAsync(userId);
 
             if (dbUser == null)
             {
@@ -94,7 +94,7 @@ namespace uchat_server.Services
                 return new List<SharedLibrary.Models.User>();
             }
 
-            var dbUsers = await _context.Users
+            var dbUsers = await context.Users
                 .Where(u => u.Name.StartsWith(partialName)) 
                 .Take(10) // Limit to 10 results
                 .ToListAsync();
@@ -111,6 +111,35 @@ namespace uchat_server.Services
         {
             // Simple random string for now
             return Guid.NewGuid().ToString();
+        }
+
+        public async Task UploadProfilePicture(int userId, IFormFile file)
+        {
+            DbUser user = await context.Users.FindAsync(userId)
+                ?? throw new InvalidOperationException("Can't assign avatar to user who doesn't exist");
+
+            string folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/Files");
+
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            FileInfo fileInfo = new FileInfo(file.FileName);
+
+            if(fileInfo.Extension.Trim() is not (".png" or ".jpeg")) {
+                throw new InvalidDataException($"This file format ({fileInfo.Extension.Trim()}) is not supported");
+            }
+
+            //todo: encrypt or randomize file name
+            string uniqueFileName = Guid.NewGuid().ToString() + fileInfo.Extension.Trim();
+            string diskPath = Path.Combine(folder, uniqueFileName);
+
+            using (var stream = new FileStream(diskPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            user.ImageUrl = $"Files/{uniqueFileName}";
+            await context.SaveChangesAsync();
         }
     }
 }

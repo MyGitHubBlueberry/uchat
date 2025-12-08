@@ -64,4 +64,30 @@ public class UserController(IUserService userService) : ControllerBase
             return Ok(new List<SharedLibrary.Models.User>());
         }
     }
+
+    [HttpPost("picture")]
+    public async Task<IActionResult> UploadProfilePicture(int userId, [FromForm] IFormFile file)
+    {
+        if (file is null || file.Length == 0) {
+            return BadRequest("No file uploaded.");
+        }
+
+        try
+        {
+            await userService.UploadProfilePicture(userId, file);
+            return Ok(new { Message = "Avatar updated successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidDataException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Internal server error: " + ex.Message);
+        }
+    }
 }
