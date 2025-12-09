@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using uchat_server.Services;
+using uchat_server.Models;
 
 namespace uchat_server.Controllers;
 
@@ -7,12 +8,26 @@ namespace uchat_server.Controllers;
 [Route("api/chat")]
 public class ChatController(IChatService chatService) : ControllerBase
 {
-    [HttpPost("create")]
-    public IActionResult CreateChat([FromBody] string chatName)
+    [HttpPost("create/chat/{sourceUserId}-{targetUserId}")]
+    public IActionResult CreateChat(int sourceUserId, int targetUserId)
     {
         try
         {
-            var newChatId = chatService.CreateChatRoomAsync(chatName);
+            var newChatId = chatService.CreateChatAsync(sourceUserId, targetUserId);
+            return Ok(newChatId);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("create/groupChat")]
+    public IActionResult CreateGroupChat([FromBody] GroupChatCreateRequest chat)
+    {
+        try
+        {
+            var newChatId = chatService.CreateGroupChatAsync(chat);
             return Ok(newChatId);
         }
         catch (Exception ex)
@@ -30,8 +45,7 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-    // ADDED SECRET KEY PARAMETER
-    [HttpGet("{chatId}")]
+    [HttpGet("chat/{chatId}")]
     public IActionResult GetChatById(int chatId, [FromQuery] int userId) {
         try {
             return Ok(chatService.GetChatByIdAsync(chatId, userId));
@@ -40,10 +54,24 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-    [HttpGet("{userId}/chats")]
-    public IActionResult GetUserChats(int userId) {
+    [HttpGet("groupChat/{chatId}")]
+    public IActionResult GetGroupChatById(int chatId, [FromQuery] int userId) {
         try {
-            return Ok(chatService.GetUserChatsAsync(userId));
+            return Ok(chatService.GetGroupChatByIdAsync(chatId, userId));
+        } catch (Exception ex) {
+            return BadRequest(ex.Message);
+        }
+    }
+
+
+    [HttpGet("{userId}/chats")]
+    public async Task<IActionResult> GetUserChats(int userId) {
+        try {
+            var test = await chatService.GetUserChatsAsync(userId);
+            return Ok(new {
+                    Chats = test.Item1,
+                    GroupChats = test.Item2,
+                    });
         } catch (Exception ex) {
             return BadRequest(ex.Message);
         }

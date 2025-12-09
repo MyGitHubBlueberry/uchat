@@ -1,13 +1,15 @@
-﻿using uchat_server.Database.Models;
+﻿using SharedLibrary.Models;
+using uchat_server.Models;
 
 namespace uchat_server.Services
 {
     public interface IChatService
     {
-        Task<int> CreateChatRoomAsync(string chatName);
-        // TODO: ADD SECRET KEY PARAMETER
-        Task<DbChat> GetChatByIdAsync(int chatId, int userId);
-        Task<List<DbChat>> GetUserChatsAsync(int userId);
+        Task<int> CreateChatAsync(int sourceUserId, int targetUserId);
+        Task<int> CreateGroupChatAsync(GroupChatCreateRequest groupChat);
+        Task<Chat> GetChatByIdAsync(int chatId, int userId);
+        Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId);
+        Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId);
         Task<bool> DeleteChatAsync(int chatId);
 
         //Task AddChatMemberAsync(int chatId, int userId);
