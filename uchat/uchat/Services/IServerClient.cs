@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using SharedLibrary.Models;
@@ -6,6 +7,9 @@ namespace uchat;
 
 public interface IServerClient
 {
+    event Action<Message>? OnMessageReceived;
+    event Action? OnDisconnected;
+    
     Task<User> UserRegistration(string username, string password);
     Task<User> UserLogin(string  username, string password);
     Task SendMessage(Message message, int chatId, List<string>? imagePaths = null);
@@ -15,6 +19,9 @@ public interface IServerClient
     Task<User> GetUserInfo(int chatId, int messageId);
     Task<Chat[]> GetChats();
     //void RegisterNotificationCallback(Action<Message> msg);
+    Task<int> CreateChat(int sourceUserId, int targetUserId);
+    Task JoinChatGroup(int chatId, List<int> memberIds);
+    Task LeaveChatGroup(int chatId);
     Task UploadProfilePicture(int userId, string filePath);
     Task RemoveProfilePicture(int userId);
     Task UpdatePassword(int userId, string? currentPassword, string newPassword);

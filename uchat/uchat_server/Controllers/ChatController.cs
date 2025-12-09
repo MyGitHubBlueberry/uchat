@@ -9,11 +9,11 @@ namespace uchat_server.Controllers;
 public class ChatController(IChatService chatService) : ControllerBase
 {
     [HttpPost("create/chat/{sourceUserId}-{targetUserId}")]
-    public IActionResult CreateChat(int sourceUserId, int targetUserId)
+    public async Task<IActionResult> CreateChat(int sourceUserId, int targetUserId)
     {
         try
         {
-            var newChatId = chatService.CreateChatAsync(sourceUserId, targetUserId);
+            var newChatId = await chatService.CreateChatAsync(sourceUserId, targetUserId);
             return Ok(newChatId);
         }
         catch (Exception ex)
@@ -23,11 +23,11 @@ public class ChatController(IChatService chatService) : ControllerBase
     }
 
     [HttpPost("create/groupChat")]
-    public IActionResult CreateGroupChat([FromBody] GroupChatCreateRequest chat)
+    public async Task<IActionResult> CreateGroupChat([FromBody] GroupChatCreateRequest chat)
     {
         try
         {
-            var newChatId = chatService.CreateGroupChatAsync(chat);
+            var newChatId = await chatService.CreateGroupChatAsync(chat);
             return Ok(newChatId);
         }
         catch (Exception ex)

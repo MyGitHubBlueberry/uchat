@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Threading;
@@ -40,6 +41,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _userName = _userSession.CurrentUser?.Name ?? string.Empty;
 
         Messages.CollectionChanged += OnMessagesCollectionChanged;
+        _serverClient.OnMessageReceived += OnMessageReceived;
         
         OpenProfileCommand = new RelayCommand(OpenProfile);
 
@@ -50,6 +52,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private int _currentPage = 0;
     private const int PageSize = 50;
+    private int? _currentChatId;
 
     partial void OnSelectedChatChanged(ChatViewModel? oldValue, ChatViewModel? newValue)
     {
@@ -85,8 +88,7 @@ public partial class MainWindowViewModel : ViewModelBase
         
         if (Chats.Count > 0)
         {
-            SelectedChat = Chats[0];
-            await GetChatHistory();
+            await SelectChatCommand.ExecuteAsync(Chats[0]);
         }
     }
     
@@ -95,17 +97,71 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if ((string.IsNullOrWhiteSpace(MessageText) && AttachedImages.Count == 0) || SelectedChat == null) return;
 
+        var chatId = SelectedChat.Chat.id;
+
+        if (chatId == -1)
+        {
+            try
+            {
+                chatId = await _serverClient.CreateChat(_userSession.CurrentUser!.Id, SelectedChat.Chat.userTo.Id);
+            }
+            catch (Exception ex) when (ex.Message.Contains("Chat already exists"))
+            {
+                await LoadChats();
+                
+                var existingChat = Chats.FirstOrDefault(c => 
+                    (c.Chat.userFrom.Id == _userSession.CurrentUser?.Id && c.Chat.userTo.Id == SelectedChat.Chat.userTo.Id) ||
+                    (c.Chat.userTo.Id == _userSession.CurrentUser?.Id && c.Chat.userFrom.Id == SelectedChat.Chat.userTo.Id));
+
+                if (existingChat != null)
+                {
+                    RemoveLocalChats();
+                    SelectedChat = existingChat;
+                    chatId = existingChat.Chat.id;
+                    
+                    var memberIds = new List<int> { SelectedChat.Chat.userFrom.Id, SelectedChat.Chat.userTo.Id };
+                    await _serverClient.JoinChatGroup(chatId, memberIds);
+                    _currentChatId = chatId;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            
+            if (chatId != SelectedChat.Chat.id)
+            {
+                var realChat = new Chat(
+                    id: chatId,
+                    userFrom: SelectedChat.Chat.userFrom,
+                    userTo: SelectedChat.Chat.userTo,
+                    muted: false,
+                    blocked: false
+                );
+
+                var index = Chats.IndexOf(SelectedChat);
+                Chats.RemoveAt(index);
+                var newChatViewModel = new ChatViewModel(realChat, _userSession.CurrentUser.Id);
+                Chats.Insert(index, newChatViewModel);
+                SelectedChat = newChatViewModel;
+
+                var memberIds = new List<int> { SelectedChat.Chat.userFrom.Id, SelectedChat.Chat.userTo.Id };
+                await _serverClient.JoinChatGroup(chatId, memberIds);
+                _currentChatId = chatId;
+            }
+        }
+
         var msg = new Message
         {
             Content = MessageText ?? string.Empty,
             SenderName = UserName,
-            ChatId = SelectedChat.Chat.id,
+            ChatId = chatId,
             Timestamp = DateTime.UtcNow
         };
 
         MessageText = "";
 
-        await _serverClient.SendMessage(msg, SelectedChat.Chat.id, AttachedImages.Count > 0 ? AttachedImages.ToList() : null);
+        await _serverClient.SendMessage(msg, chatId, AttachedImages.Count > 0 ? AttachedImages.ToList() : null);
         
         if (AttachedImages.Count > 0)
         {
@@ -265,6 +321,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task SelectChat(ChatViewModel chatViewModel)
     {
+        if (_currentChatId.HasValue)
+        {
+            await _serverClient.LeaveChatGroup(_currentChatId.Value);
+            _currentChatId = null;
+        }
+
         if (chatViewModel.Chat.id == -1)
         {
             SelectedChat = chatViewModel;
@@ -275,6 +337,10 @@ public partial class MainWindowViewModel : ViewModelBase
             RemoveLocalChats();
             SelectedChat = chatViewModel;
             await GetChatHistory();
+            
+            var memberIds = new List<int> { chatViewModel.Chat.userFrom.Id, chatViewModel.Chat.userTo.Id };
+            await _serverClient.JoinChatGroup(chatViewModel.Chat.id, memberIds);
+            _currentChatId = chatViewModel.Chat.id;
         }
     }
 

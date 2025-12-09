@@ -192,15 +192,76 @@ public class ServerClient : IServerClient
 
     public async Task<Chat[]> GetChats()
     {
-        var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat");
-        
-        if (!response.IsSuccessStatusCode)
+        if (!_currentUserId.HasValue)
         {
             return [];
         }
 
-        var result = await response.Content.ReadFromJsonAsync<Chat[]>();
-        return result ?? [];
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat/{_currentUserId.Value}/chats");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"GetChats failed: {response.StatusCode} - {errorContent}");
+            return [];
+        }
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"GetChats response: {responseContent}");
+
+        using var jsonDoc = System.Text.Json.JsonDocument.Parse(responseContent);
+        
+        if (jsonDoc == null)
+        {
+            return [];
+        }
+
+        if (!jsonDoc.RootElement.TryGetProperty("chats", out var chatsElement))
+        {
+            Console.WriteLine("Response does not contain 'chats' property");
+            return [];
+        }
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var chats = System.Text.Json.JsonSerializer.Deserialize<Chat[]>(chatsElement.GetRawText(), options);
+        return chats ?? [];
+    }
+
+    public async Task<int> CreateChat(int sourceUserId, int targetUserId)
+    {
+        var response = await _httpClient.PostAsync($"{_serverUrl}/api/chat/create/chat/{sourceUserId}-{targetUserId}", null);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error creating chat: {response.StatusCode} - {errorContent}");
+        }
+
+        var chatId = await response.Content.ReadFromJsonAsync<int>();
+        return chatId;
+    }
+
+    public async Task JoinChatGroup(int chatId, List<int> memberIds)
+    {
+        if (_connection == null || _connection.State != HubConnectionState.Connected)
+        {
+            throw new Exception("Not connected to chat hub");
+        }
+
+        await _connection.InvokeAsync("JoinChat", chatId.ToString(), memberIds);
+    }
+
+    public async Task LeaveChatGroup(int chatId)
+    {
+        if (_connection == null || _connection.State != HubConnectionState.Connected)
+        {
+            return;
+        }
+
+        await _connection.InvokeAsync("LeaveChat", chatId.ToString());
     }
 
     private async Task ConnectToHubAsync()
