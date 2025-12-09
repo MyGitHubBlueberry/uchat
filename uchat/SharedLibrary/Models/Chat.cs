@@ -5,6 +5,7 @@ public record Chat(
         User userFrom,
         User userTo,
         bool muted,
-        bool blocked
+        bool blocked,
+        string? lastMessagePreview = null
     );
 

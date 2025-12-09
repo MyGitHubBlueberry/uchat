@@ -18,5 +18,14 @@ public partial class ChatViewModel(Chat chat, int currentUserId) : ObservableObj
         ? DisplayName[0].ToString() 
         : "?";
 
+    [ObservableProperty] private string _lastMessagePreview = chat.lastMessagePreview ?? "No messages yet";
+
     [ObservableProperty] private bool _isSelected;
+
+    public void UpdateLastMessage(string messageContent)
+    {
+        LastMessagePreview = messageContent.Length > 50 
+            ? messageContent[..50] + "..." 
+            : messageContent;
+    }
 }

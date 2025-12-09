@@ -23,13 +23,16 @@ namespace uchat_server.Services
             var skip = (pageNumber - 1) * pageSize;
 
             return await db.Messages
-                .Where(m => m.ChatId == chatId)
-                .OrderByDescending(m => m.TimeSent)
-                .Include(m => m.Attachments)
-                .Include(m => m.Sender).ThenInclude(sm => sm.User)
-                .Skip(skip)
-                .Take(pageSize)
-                .ToListAsync();
+            .AsNoTracking()
+            .Where(m => m.ChatId == chatId)
+            .OrderBy(m => m.TimeSent)
+            .ThenBy(m => m.Id)
+            .Include(m => m.Attachments)
+            .Include(m => m.Sender)
+            .ThenInclude(sm => sm.User)
+            .Skip(skip)
+            .Take(pageSize)
+            .ToListAsync();
         }
 
         public async Task<List<Message>> GetChatMessagesDtoAsync(int chatId, int pageNumber = 1, int pageSize = 50)
@@ -41,7 +44,7 @@ namespace uchat_server.Services
 
             return await db.Messages
                 .Where(m => m.ChatId == chatId)
-                .OrderByDescending(m => m.TimeSent)
+                .OrderBy(m => m.TimeSent)
                 .Include(m => m.Sender).ThenInclude(s => s.User)
                 .Include(m => m.Attachments)
                 .Skip(skip)
@@ -116,6 +119,29 @@ namespace uchat_server.Services
 
             await db.Messages.AddAsync(dbMsg);
             await db.SaveChangesAsync();
+
+            var chatMembers = await db.ChatMembers
+                .Where(m => m.ChatId == msg.ChatId)
+                .ToListAsync();
+            
+            foreach (var member in chatMembers)
+            {
+                member.LastMessageId = dbMsg.Id;
+            }
+            
+            await db.SaveChangesAsync();
+        }
+
+        public async Task<string> DecryptMessageAsync(DbMessage message, int chatId)
+        {
+            var chat = await db.Chats.FindAsync(chatId);
+            if (chat == null)
+            {
+                throw new Exception("Chat not found");
+            }
+
+            var encryptedMessage = new EncryptedMessage(message.CipheredText, message.Iv);
+            return encryptedMessage.Decrypt(_masterKey);
         }
     }
 }

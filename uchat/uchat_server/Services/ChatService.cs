@@ -9,7 +9,7 @@ using uchat_server.Files;
 
 namespace uchat_server.Services;
 
-public class ChatService(AppDbContext context, IConfiguration configuration, IUserService userService) : IChatService
+public class ChatService(AppDbContext context, IConfiguration configuration, IUserService userService, IMessageService messageService) : IChatService
 {
 
     private readonly byte[] masterKey = Convert.FromBase64String(configuration["MasterKey"]
@@ -123,6 +123,7 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
     {
         var dbChat = await context.Chats
             .Include(c => c.Members)
+            .ThenInclude(m => m.LastMessage)
             .FirstAsync(c => c.Id == chatId)
             ?? throw new InvalidDataException("Can't get chat that doesn't exist");
         if (dbChat.OwnerId != null)
@@ -136,7 +137,16 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
                 .First()
                 .UserId);
 
-        return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked);
+        string? lastMessagePreview = null;
+        if (member.LastMessage != null)
+        {
+            var decryptedContent = await messageService.DecryptMessageAsync(member.LastMessage, chatId);
+            lastMessagePreview = decryptedContent.Length > 50 
+                ? decryptedContent[..50] + "..." 
+                : decryptedContent;
+        }
+
+        return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked, lastMessagePreview);
     }
 
     public async Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId)
