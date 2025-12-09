@@ -3,6 +3,7 @@ using uchat_server.Database;
 using uchat_server.Database.Models;
 using SharedLibrary.Models;
 using SharedLibrary.Extensions;
+using uchat_server.Files;
 
 namespace uchat_server.Services
 {
@@ -12,6 +13,8 @@ namespace uchat_server.Services
         private readonly byte[] _masterKey = Convert.FromBase64String(configuration["MasterKey"]
                                              ?? throw new Exception("MasterKey is missing in config")
         );
+
+        private readonly string _attachmentFolder = "Attachments";
         public async Task<List<DbMessage>> GetChatMessagesAsync(int chatId, int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -98,25 +101,14 @@ namespace uchat_server.Services
             if (files != null && files.Count > 0)
             {
                 dbMsg.Attachments = new List<DbAttachment>();
-                
-                string folder = Path.Combine(Directory.GetCurrentDirectory(), Path.Combine("wwwroot", "Attachments"));
-                if (!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
 
                 foreach (var file in files)
                 {
-                    FileInfo fileInfo = new FileInfo(file.FileName);
-                    string uniqueFileName = Guid.NewGuid().ToString() + fileInfo.Extension.Trim();
-                    string diskPath = Path.Combine(folder, uniqueFileName);
-
-                    using (var stream = new FileStream(diskPath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
+                    string uniqueFIleName = await FileManager.Save(file, _attachmentFolder);
 
                     dbMsg.Attachments.Add(new DbAttachment
                     {
-                        Url = Path.Combine("Attachments", uniqueFileName),
+                        Url = Path.Combine(_attachmentFolder, uniqueFIleName),
                         Message = dbMsg
                     });
                 }
