@@ -221,21 +221,46 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
 
     public async Task<bool> RemoveChatMemberAsync(int chatId, int userId)
     {
-        var member = await context.ChatMembers
+        var memberToRemove = await context.ChatMembers
             .FirstOrDefaultAsync(m => m.ChatId == chatId && m.UserId == userId);
-        if (member == null)
+
+        if (memberToRemove == null) return false;
+
+        var chat = await context.Chats
+            .Include(c => c.Members) 
+            .FirstOrDefaultAsync(c => c.Id == chatId);
+        
+        if (chat == null) return false;
+
+        if (chat.OwnerId == userId)
         {
-            return false;
+            var successor = chat.Members
+                .Where(m => m.UserId != userId)
+                .OrderBy(m => m.UserId) 
+                .FirstOrDefault();
+
+            if (successor == null)
+            {
+                // --- SCENARIO 1: LAST PERSON LEFT ---
+                // No successor found. Delete everything.
+                
+                context.ChatMembers.Remove(memberToRemove);
+                context.Chats.Remove(chat);
+            }
+            else
+            {
+                // --- SCENARIO 2: TRANSFER OWNERSHIP ---
+                chat.OwnerId = successor.UserId;
+                successor.IsAdmin = true; 
+                context.ChatMembers.Remove(memberToRemove);
+            }
+        }
+        else
+        {
+            // --- SCENARIO 3: NORMAL MEMBER LEAVING ---
+            context.ChatMembers.Remove(memberToRemove);
         }
 
-        // Prevent removing the Owner - or change new onwer, or just remove this block 
-        var chat = await context.Chats.FindAsync(chatId);
-        if (chat != null && chat.OwnerId == userId)
-        {
-            throw new InvalidOperationException("Cannot remove the Owner from their own group. Delete the chat instead.");
-        }
-
-        context.ChatMembers.Remove(member);
         await context.SaveChangesAsync();
         return true;
     }
