@@ -40,6 +40,7 @@ namespace uchat_server.Services
                 .Where(m => m.ChatId == chatId)
                 .OrderByDescending(m => m.TimeSent)
                 .Include(m => m.Sender).ThenInclude(s => s.User)
+                .Include(m => m.Attachments)
                 .Skip(skip)
                 .Take(pageSize)
                 .Select(m => new Message
@@ -51,20 +52,23 @@ namespace uchat_server.Services
                                ).Decrypt(_masterKey),
                     ChatId = m.ChatId,
                     SenderName = m.Sender != null && m.Sender.User != null ? m.Sender.User.Name : string.Empty,
-                    Timestamp = m.TimeSent
+                    Timestamp = m.TimeSent,
+                    Attachments = m.Attachments != null ? m.Attachments.Select(a => new Attachment
+                    {
+                        Id = a.Id,
+                        Url = a.Url
+                    }).ToList() : null
                 })
                 .ToListAsync();
         }
 
-        public async Task SaveMessageAsync(Message msg)
+        public async Task SaveMessageAsync(Message msg, List<IFormFile>? files = null)
         {
             DbChat? dbChat = await db.Chats.FindAsync(msg.ChatId);
             if (dbChat is null) {
-                // TODO: maybe create new chat instead, but we need id to whom the message is sent
                 throw new Exception("Can't send message in chat, that doesn't exist.");
             }
 
-            // Throws exeption if user doesn't exist
             DbUser user = await db.Users
                 .Where(u => u.Name == msg.SenderName)
                 .FirstAsync();
@@ -90,6 +94,33 @@ namespace uchat_server.Services
                 SenderId = user.Id,
                 Sender = sender,
             };
+
+            if (files != null && files.Count > 0)
+            {
+                dbMsg.Attachments = new List<DbAttachment>();
+                
+                string folder = Path.Combine(Directory.GetCurrentDirectory(), Path.Combine("wwwroot", "Attachments"));
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+
+                foreach (var file in files)
+                {
+                    FileInfo fileInfo = new FileInfo(file.FileName);
+                    string uniqueFileName = Guid.NewGuid().ToString() + fileInfo.Extension.Trim();
+                    string diskPath = Path.Combine(folder, uniqueFileName);
+
+                    using (var stream = new FileStream(diskPath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    dbMsg.Attachments.Add(new DbAttachment
+                    {
+                        Url = Path.Combine("Attachments", uniqueFileName),
+                        Message = dbMsg
+                    });
+                }
+            }
 
             await db.Messages.AddAsync(dbMsg);
             await db.SaveChangesAsync();

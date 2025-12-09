@@ -11,12 +11,25 @@ namespace uchat_server.Controllers;
 public class MessageController(IHubContext<ChatHub> hubContext, IMessageService messageService) : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> SendMessage([FromBody] Message msg)
+    public async Task<IActionResult> SendMessage([FromForm] string? messageJson, [FromForm] List<IFormFile>? files)
     {
-        await messageService.SaveMessageAsync(msg);
+        Message? msg = null;
+        
+        if (!string.IsNullOrEmpty(messageJson))
+        {
+            msg = System.Text.Json.JsonSerializer.Deserialize<Message>(messageJson);
+        }
+        
+        if (msg == null) return BadRequest("Invalid message format");
 
-        await hubContext.Clients.Group(msg.ChatId.ToString())
-            .SendAsync("ReceiveMessage", msg);
+        await messageService.SaveMessageAsync(msg, files);
+
+        var savedMsg = await messageService.GetChatMessagesDtoAsync(msg.ChatId, 1, 1);
+        if (savedMsg.Count > 0)
+        {
+            await hubContext.Clients.Group(msg.ChatId.ToString())
+                .SendAsync("ReceiveMessage", savedMsg[0]);
+        }
 
         Console.WriteLine("Message sent");
 

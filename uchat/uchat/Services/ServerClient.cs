@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using uchat.Services;
+using System.IO;
 
 namespace uchat;
 
@@ -52,7 +53,7 @@ public class ServerClient : IServerClient
                 return false;
             }
 
-            _currentUserId = loginResponse.Id;
+            _currentUserId = loginResponse.UserId;
 
             await ConnectToHubAsync();
 
@@ -73,11 +74,40 @@ public class ServerClient : IServerClient
         Console.WriteLine($"Mock registration: {username}");
     }
 
-    public async Task SendMessage(Message mes, int chatId)
+    public async Task SendMessage(Message mes, int chatId, List<string>? imagePaths = null)
     {
         mes.ChatId = chatId;
+
+        using var form = new MultipartFormDataContent();
         
-        var response = await _httpClient.PostAsJsonAsync($"{_serverUrl}/api/message", mes);
+        var messageJson = System.Text.Json.JsonSerializer.Serialize(mes);
+        form.Add(new StringContent(messageJson), "messageJson");
+
+        if (imagePaths != null && imagePaths.Count > 0)
+        {
+            foreach (var imagePath in imagePaths)
+            {
+                if (File.Exists(imagePath))
+                {
+                    var fileStream = File.OpenRead(imagePath);
+                    var streamContent = new StreamContent(fileStream);
+                    string extension = Path.GetExtension(imagePath).ToLowerInvariant();
+                    string contentType = extension switch
+                    {
+                        ".jpg" or ".jpeg" => "image/jpeg",
+                        ".png" => "image/png",
+                        ".gif" => "image/gif",
+                        ".bmp" => "image/bmp",
+                        // TODO: REVIEW?
+                        _ => "application/octet-stream"
+                    };
+                    streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+                    form.Add(streamContent, "files", Path.GetFileName(imagePath));
+                }
+            }
+        }
+
+        var response = await _httpClient.PostAsync($"{_serverUrl}/api/message", form);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -178,5 +208,82 @@ public class ServerClient : IServerClient
         {
             await _connection.InvokeAsync("SubscribeUser", _currentUserId.Value);
         }
+    }
+
+    public async Task UploadProfilePicture(int userId, string filePath)
+    {
+        using var form = new MultipartFormDataContent();
+        using var fileStream = File.OpenRead(filePath);
+        var streamContent = new StreamContent(fileStream);
+        string extension = Path.GetExtension(filePath).ToLowerInvariant();
+        string contentType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        form.Add(streamContent, "file", Path.GetFileName(filePath));
+
+        var response = await _httpClient.PostAsync($"{_serverUrl}/api/user/picture/{userId}", form);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Error uploading profile picture");
+        }
+    }
+
+    public async Task RemoveProfilePicture(int userId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_serverUrl}/api/user/picture/{userId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Error removing profile picture");
+        }
+    }
+
+    public async Task UpdatePassword(int userId, string? currentPassword, string newPassword)
+    {
+        var request = new 
+        {
+            CurrentPassword = currentPassword,
+            NewPassword = newPassword
+        };
+
+        var response = await _httpClient.PutAsJsonAsync($"{_serverUrl}/api/user/password/{userId}", request);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Error updating password");
+        }
+    }
+
+    public async Task DeleteAccount(int userId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_serverUrl}/api/user/{userId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Error deleting account");
+        }
+    }
+
+    public async Task<List<User>> SearchUsers(string partialName)
+    {
+        if (string.IsNullOrWhiteSpace(partialName))
+        {
+            return [];
+        }
+
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/user/search?name={Uri.EscapeDataString(partialName)}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<List<User>>();
+        return result ?? [];
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SharedLibrary.Models;
 
 namespace uchat.ViewModels;
@@ -24,4 +25,6 @@ public class MessageViewModel
     public int Id => _message.Id;
     
     public int ChatId => _message.ChatId;
+    
+    public List<Attachment>? Attachments => _message.Attachments;
 }

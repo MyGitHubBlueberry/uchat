@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,6 +8,8 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using SharedLibrary.Models;
 using uchat.Services;
+using Avalonia.Platform.Storage;
+using System.Linq;
 
 namespace uchat.ViewModels;
 
@@ -15,25 +18,33 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IServerClient _serverClient;
     private readonly IUserSession _userSession;
     
+    public ICommand OpenProfileCommand { get; }
+    
     public ObservableCollection<Chat> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
+    public ObservableCollection<User> SearchResults { get; } = new();
+    public ObservableCollection<string> AttachedImages { get; } = new();
     
     [ObservableProperty] private Chat? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
     [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private bool _shouldScrollToBottom;
+    [ObservableProperty] private string _searchText = string.Empty;
     
     public MainWindowViewModel(IServerClient serverClient, IUserSession userSession)
     {
         _serverClient = serverClient;
         _userSession = userSession;
-        // TODO: remove mock or make as default username (as it on reddit btw ?)
-        _userName = _userSession.CurrentUser?.Name;
+        _userName = _userSession.CurrentUser?.Name ?? string.Empty;
 
         Messages.CollectionChanged += OnMessagesCollectionChanged;
+        
+        OpenProfileCommand = new RelayCommand(OpenProfile);
 
         _ = InitializeAsync();
     }
+    
+    public event EventHandler? ProfileRequested;
 
     private int _currentPage = 0;
     private const int PageSize = 50;
@@ -65,19 +76,60 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task Send()
     {
-        if (string.IsNullOrWhiteSpace(MessageText) || SelectedChat == null) return;
+        if ((string.IsNullOrWhiteSpace(MessageText) && AttachedImages.Count == 0) || SelectedChat == null) return;
 
         var msg = new Message
         {
-            Content = MessageText,
+            Content = MessageText ?? string.Empty,
             SenderName = UserName,
             ChatId = SelectedChat.id,
             Timestamp = DateTime.UtcNow
         };
 
         MessageText = "";
+
+        await _serverClient.SendMessage(msg, SelectedChat.id, AttachedImages.Count > 0 ? AttachedImages.ToList() : null);
         
-        await _serverClient.SendMessage(msg, SelectedChat.id);
+        if (AttachedImages.Count > 0)
+        {
+            AttachedImages.Clear();
+        }
+    }
+
+    [RelayCommand]
+    private async Task AttachImages()
+    {
+        var topLevel = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = topLevel?.MainWindow;
+
+        if (mainWindow == null) return;
+
+        var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select Images",
+            AllowMultiple = true,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Images")
+                {
+                    Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"]
+                }
+            }
+        });
+
+        foreach (var file in files)
+        {
+            if (file.TryGetLocalPath() is string path)
+            {
+                AttachedImages.Add(path);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveAttachment(string path)
+    {
+        AttachedImages.Remove(path);
     }
     
     [RelayCommand]
@@ -132,5 +184,28 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Messages.Add(CreateMessageViewModel(msg));
         });
+    }
+    
+    private void OpenProfile()
+    {
+        ProfileRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private async Task SearchUsers(string partialName)
+    {
+        SearchResults.Clear();
+
+        if (string.IsNullOrWhiteSpace(partialName))
+        {
+            return;
+        }
+
+        var users = await _serverClient.SearchUsers(partialName);
+        
+        foreach (var user in users)
+        {
+            SearchResults.Add(user);
+        }
     }
 }
