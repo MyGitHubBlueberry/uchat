@@ -76,4 +76,39 @@ public class ChatController(IChatService chatService) : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpPost("{chatId}/members/{userId}")]
+    public async Task<IActionResult> AddMember(int chatId, int userId)
+    {
+        try
+        {
+            await chatService.AddChatMemberAsync(chatId, userId);
+            return Ok(new { Message = "Member added successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+    
+    [HttpDelete("{chatId}/members/{userId}")]
+    public async Task<IActionResult> RemoveMember(int chatId, int userId)
+    {
+        try
+        {
+            bool success = await chatService.RemoveChatMemberAsync(chatId, userId);
+            if (success)
+            {
+                return Ok(new { Message = "Member removed successfully" });
+            }
+            else
+            {
+                return NotFound(new { Error = "Member not found in this chat" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
 }

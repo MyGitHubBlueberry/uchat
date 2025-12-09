@@ -182,5 +182,58 @@ namespace uchat_server.Services
 
             return (chats.ToList(), groupChats.ToList());
         }
+
+        public async Task AddChatMemberAsync(int chatId, int userId)
+        {
+            var chat = await context.Chats
+                .Include(c => c.Members)
+                .FirstOrDefaultAsync(c => c.Id == chatId)
+                ?? throw new Exception("Chat not found");
+
+            // Only Group Chats can have new members
+            if (chat.OwnerId == null)
+            {
+                throw new InvalidOperationException("Cannot add members to a Direct Chat.");
+            }
+
+            var user = await context.Users.FindAsync(userId)
+                ?? throw new Exception("User not found");
+            if (chat.Members.Any(m => m.UserId == userId))
+            {
+                throw new InvalidOperationException("User is already a member of this chat.");
+            }
+            var newMember = new DbChatMember
+            {
+                ChatId = chatId,
+                UserId = userId,
+                IsAdmin = false,
+                IsMuted = false,
+                IsBlocked = false
+            };
+
+            context.ChatMembers.Add(newMember);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task<bool> RemoveChatMemberAsync(int chatId, int userId)
+        {
+            var member = await context.ChatMembers
+                .FirstOrDefaultAsync(m => m.ChatId == chatId && m.UserId == userId);
+            if (member == null)
+            {
+                return false;
+            }
+
+            // Prevent removing the Owner - or change new onwer, or just remove this block 
+            var chat = await context.Chats.FindAsync(chatId);
+            if (chat != null && chat.OwnerId == userId)
+            {
+                throw new InvalidOperationException("Cannot remove the Owner from their own group. Delete the chat instead.");
+            }
+
+            context.ChatMembers.Remove(member);
+            await context.SaveChangesAsync();
+            return true;
+        }
     }
 }
