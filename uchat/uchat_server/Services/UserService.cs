@@ -58,7 +58,16 @@ namespace uchat_server.Services
                 throw new Exception("User not found.");
             }
 
-            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+            bool isPasswordCorrect = false;
+
+            try
+            {
+                isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+            } 
+            catch (Exception ex) {
+                throw new Exception($"Invalid password hash format. User may need to reset password. " +
+                    $"Details: {ex.Message}");
+            }
 
             // Checking password with DIRECT COMPARISON for now
             if (!isPasswordCorrect)
