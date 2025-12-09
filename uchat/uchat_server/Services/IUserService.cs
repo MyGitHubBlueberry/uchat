@@ -10,7 +10,7 @@ namespace uchat_server.Services
         Task<SharedLibrary.Models.User> GetUserByIdAsync(int userId);
         Task<List<SharedLibrary.Models.User>> GetUserByNameAsync(string partialName);
         Task UploadProfilePicture(int userId, IFormFile file);
-        Task RemoveProfilePicture(int userId);
+        Task<bool> RemoveProfilePicture(int userId);
         Task UpdatePasswordAsync(int userId, UpdatePasswordRequest request);
         Task DeleteUserAsync(int userId);
     }

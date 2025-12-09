@@ -95,8 +95,7 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<IActionResult> RemoveProfilePicture(int userId)
     {
         try {
-            await userService.RemoveProfilePicture(userId);
-            return Ok(new { Message = "User awatar was removed successfully" });
+            return Ok(await userService.RemoveProfilePicture(userId));
         } catch (InvalidOperationException ex) {
             return NotFound(ex.Message);
         } catch (Exception ex) {

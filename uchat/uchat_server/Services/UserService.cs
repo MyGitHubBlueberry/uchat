@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using uchat_server.Database;
 using uchat_server.Database.Models;
+using uchat_server.Files;
 using uchat_server.Models;
-using BCrypt.Net;
 
 namespace uchat_server.Services
 {
@@ -123,37 +123,20 @@ namespace uchat_server.Services
             DbUser user = await context.Users.FindAsync(userId)
                 ?? throw new InvalidOperationException("Can't assign avatar to user who doesn't exist");
 
-            string folder = Path.Combine(Directory.GetCurrentDirectory(), Path.Combine("wwwroot", "Files"));
+            user.ImageUrl = await FileManager.Save(file, "ProfilePictures");
 
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            FileInfo fileInfo = new FileInfo(file.FileName);
-
-            if(fileInfo.Extension.Trim() is not (".png" or ".jpeg")) {
-                throw new InvalidDataException($"This file format ({fileInfo.Extension.Trim()}) is not supported");
-            }
-
-            string uniqueFileName = Guid.NewGuid().ToString() + fileInfo.Extension.Trim();
-            string diskPath = Path.Combine(folder, uniqueFileName);
-
-            using (var stream = new FileStream(diskPath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            user.ImageUrl = Path.Combine("Files", uniqueFileName);
             await context.SaveChangesAsync();
         }
 
-        public async Task RemoveProfilePicture(int userId) {
+        public async Task<bool> RemoveProfilePicture(int userId) {
             DbUser user = await context.Users.FindAsync(userId)
                 ?? throw new InvalidOperationException("Can't remove avatar from user who doesn't exist");
-            if (user.ImageUrl is null) return;
-            string path = Path.Combine(Directory.GetCurrentDirectory(), Path.Combine("wwwroot", user.ImageUrl));
-            File.Delete(path);
+            string? url = user.ImageUrl;
             user.ImageUrl = null;
             await context.SaveChangesAsync();
+            if (url is null)
+                throw new InvalidOperationException("User doen't have an avatar");
+            return FileManager.Delete("ProfilePictures", url);
         }
 
         public async Task UpdatePasswordAsync(int userId, UpdatePasswordRequest request)

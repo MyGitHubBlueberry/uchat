@@ -235,5 +235,11 @@ namespace uchat_server.Services
             await context.SaveChangesAsync();
             return true;
         }
+
+        public async Task UploadAvatar(int chatId, IFormFile file) 
+        {
+            if(!await ChatExistsAsync(chatId))
+                throw new Exception("Chat not exist");
+        }
     }
 }
