@@ -48,9 +48,9 @@ namespace uchat_server.Services
                 Title = targetUser.Name,
             };
             dbChat.Members.AddRange(
-                new() { UserId = sourceUserId, User = sourceUser },
-                new() { UserId = targetUserId, User = targetUser }
-            );
+                    new() { UserId = sourceUserId, User = sourceUser },
+                    new() { UserId = targetUserId, User = targetUser }
+                    );
 
             await context.Chats.AddAsync(dbChat);
             await context.SaveChangesAsync();
@@ -59,12 +59,15 @@ namespace uchat_server.Services
 
         public async Task<int> CreateGroupChatAsync(GroupChatCreateRequest groupChat)
         {
+            DbUser owner = await context.Users.FindAsync(groupChat.ownerId)
+                ?? throw new Exception("Owner user not found");
+
+            if (!groupChat.participants.Contains(owner.Id))
+                groupChat.participants.Add(owner.Id);
+
             byte[] rawChatKey = Aes.Create().Key;
             string keyAsString = Convert.ToBase64String(rawChatKey);
             EncryptedMessage secureKeyPackage = keyAsString.Encrypt(masterKey);
-
-            DbUser owner = await context.Users.FindAsync(groupChat.ownerId)
-                ?? throw new Exception("Owner user not found");
 
             DbChat dbChat = new DbChat
             {
@@ -79,31 +82,20 @@ namespace uchat_server.Services
 
             // TODO: save image if exists
 
-            if (!groupChat.participants.Contains(owner.Id))
-                groupChat.participants.Add(owner.Id);
+            var dbUsers = await Task.WhenAll(
+                    groupChat.participants.Select(async id => 
+                        await context.Users.FindAsync(id)
+                        ?? throw new InvalidOperationException("Can't add user that doesn't exist")));
 
-            if (groupChat.participants.Count > 1)
-            {
-                var dbUsers = await Task.WhenAll(groupChat.participants.Select(async id => 
-                            await context.Users.FindAsync(id)
-                            ?? throw new InvalidOperationException("Can't add user that doesn't exist")));
-
-                var members = dbUsers
-                    .Select(u => new DbChatMember
-                            {
-                            UserId = u.Id,
-                            User = u,
-                            ChatId = dbChat.Id,
-                            Chat = dbChat,
-                            }).ToList();
-
-                members
-                    .First(u => u.UserId == groupChat.ownerId)
-                    .IsAdmin = true;
-
-                await context.ChatMembers.AddRangeAsync(members);
-                dbChat.Members.AddRange(members);
-            }
+            dbChat.Members.AddRange(
+                dbUsers
+                    .Select(u => new DbChatMember {
+                        UserId = u.Id,
+                        User = u,
+                        ChatId = dbChat.Id,
+                        Chat = dbChat,
+                        IsAdmin = u.Id == owner.Id,
+                    }));
 
             await context.Chats.AddAsync(dbChat);
             context.SaveChanges();
