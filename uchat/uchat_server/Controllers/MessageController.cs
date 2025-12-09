@@ -24,12 +24,8 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
 
         await messageService.SaveMessageAsync(msg, files);
 
-        var savedMsg = await messageService.GetChatMessagesDtoAsync(msg.ChatId, 1, 1);
-        if (savedMsg.Count > 0)
-        {
-            await hubContext.Clients.Group(msg.ChatId.ToString())
-                .SendAsync("ReceiveMessage", savedMsg[0]);
-        }
+        await hubContext.Clients.Group(msg.ChatId.ToString())
+            .SendAsync("ReceiveMessage", msg);
 
         Console.WriteLine("Message sent");
 

@@ -120,10 +120,16 @@
                                                        Foreground="White" 
                                                        FontWeight="Bold"/>
                                         </Border>
-                                        <StackPanel VerticalAlignment="Center">
+                                        <StackPanel VerticalAlignment="Center" Spacing="2">
                                             <TextBlock Text="{Binding DisplayName}" 
                                                        Foreground="White" 
-                                                       FontWeight="SemiBold"/>
+                                                       FontWeight="SemiBold"
+                                                       FontSize="14"/>
+                                            <TextBlock Text="{Binding LastMessagePreview}" 
+                                                       Foreground="#8899A6" 
+                                                       FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="150"/>
                                         </StackPanel>
                                     </StackPanel>
                                     </Border>

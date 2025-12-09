@@ -74,18 +74,6 @@ public class ChatHub : Hub
         Console.WriteLine($"Client {Context.ConnectionId} left chat {chatId}");
     }
 
-    public async Task LeaveAllChats()
-    {
-        if (_connectionToUser.TryGetValue(Context.ConnectionId, out var userId))
-        {
-            if (_connectedUsers.TryGetValue(userId, out var connectionIds))
-            {
-                // TODO: IMPLEMENT
-                Console.WriteLine($"User {userId} leaving all chats");
-            }
-        }
-    }
-
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var connectionId = Context.ConnectionId;
