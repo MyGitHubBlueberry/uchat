@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using SharedLibrary.Models;
 using uchat_server.Services;
+using uchat_server.Models;
 
 namespace uchat_server.Controllers;
 
@@ -22,8 +22,8 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-    [HttpPost("create/groupChat/{chat.name}")]
-    public IActionResult CreateGroupChat([FromBody] GroupChat chat)
+    [HttpPost("create/groupChat")]
+    public IActionResult CreateGroupChat([FromBody] GroupChatCreateRequest chat)
     {
         try
         {

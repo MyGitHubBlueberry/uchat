@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using uchat_server.Database;
 using uchat_server.Database.Models;
 using Microsoft.EntityFrameworkCore;
+using uchat_server.Models;
 
 namespace uchat_server.Services
 {
@@ -101,12 +102,14 @@ namespace uchat_server.Services
             return dbChat.Id;
         }
 
-        public async Task<int> CreateGroupChatAsync(GroupChat groupChat)
+        public async Task<int> CreateGroupChatAsync(GroupChatCreateRequest groupChat)
         {
             byte[] rawChatKey = Aes.Create().Key;
             string keyAsString = Convert.ToBase64String(rawChatKey);
             EncryptedMessage secureKeyPackage = keyAsString.Encrypt(masterKey);
 
+            DbUser owner = await context.Users.FindAsync(groupChat.ownerId)
+                ?? throw new Exception("Owner user not found");
 
             DbChat dbChat = new DbChat
             {
@@ -114,34 +117,39 @@ namespace uchat_server.Services
                 EncryptedKey = secureKeyPackage.cipheredText,
                 KeyIV = secureKeyPackage.iv,
                 Description = groupChat.description,
-                ImageUrl = groupChat.picture,
-                OwnerId = groupChat.owner.Id,
-                Owner = context.Users.Find(groupChat.owner.Id),
+                ImageUrl = groupChat.pictureUrl,
+                OwnerId = groupChat.ownerId,
+                Owner = owner,
             };
 
             // TODO: save image if exists
 
-            if (groupChat.participants.Count != 0)
+            if (!groupChat.participants.Contains(owner.Id))
+                groupChat.participants.Add(owner.Id);
+
+            if (groupChat.participants.Count > 1)
             {
-                var userIds = groupChat.participants.Select(p => p.Id).ToList();
+                var dbUsers = await Task.WhenAll(groupChat.participants.Select(async id => 
+                        await context.Users.FindAsync(id)
+                            ?? throw new InvalidOperationException("Can't add user that doesn't exist")));
 
-                var dbUsers = context.Users
-                    .Where(u => userIds.Contains(u.Id))
-                    .DistinctBy(u => u.Id)
-                    .ToList();
+                var members = dbUsers
+                    .Select(u => new DbChatMember
+                            {
+                            UserId = u.Id,
+                            User = u,
+                            ChatId = dbChat.Id,
+                            Chat = dbChat,
+                            }).ToList();
 
-                var members = dbUsers.Select(u => new DbChatMember
-                        {
-                        UserId = u.Id,
-                        User = u,
-                        ChatId = dbChat.Id,
-                        Chat = dbChat,
-                        });
+                members
+                    .First(u => u.UserId == groupChat.ownerId)
+                    .IsAdmin = true;
 
                 var existingRelations = new HashSet<(int, int)>(
                         (await context.UserRelations
-                         .Where(r => userIds.Contains(r.TargetUserId)
-                             && userIds.Contains(r.SourceUserId)).ToListAsync()
+                         .Where(r => groupChat.participants.Contains(r.TargetUserId)
+                             && groupChat.participants.Contains(r.SourceUserId)).ToListAsync()
                         ).Select(r => (r.SourceUserId, r.TargetUserId)));
 
                 await context.UserRelations.AddRangeAsync(
@@ -158,7 +166,7 @@ namespace uchat_server.Services
             return dbChat.Id;
         }
 
-        private List<DbUserRelation> GetMissingRelations(List<DbUser> dbUsers, HashSet<(int, int)> existingPairs)
+        private List<DbUserRelation> GetMissingRelations(DbUser[] dbUsers, HashSet<(int, int)> existingPairs)
         {
             List<DbUserRelation> newRelations = new List<DbUserRelation>();
             foreach (var source in dbUsers)
