@@ -292,4 +292,16 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
             })
             .ToListAsync();
     }
+
+    public async Task<bool> IsMemberOfChatAsync(int chatId, int userId)
+    {
+        return await context.ChatMembers
+            .AnyAsync(m => m.ChatId == chatId && m.UserId == userId);
+    }
+
+    public async Task<bool> IsOwnerOfChatAsync(int chatId, int userId)
+    {
+        return await context.Chats
+            .AnyAsync(c => c.Id == chatId && c.OwnerId == userId);
+    }
 }

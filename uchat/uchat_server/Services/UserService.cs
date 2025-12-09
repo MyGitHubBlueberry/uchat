@@ -168,7 +168,6 @@ namespace uchat_server.Services
                 }
             }
             
-
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await context.SaveChangesAsync();
         }

@@ -153,4 +153,32 @@ public class ChatController(IChatService chatService) : ControllerBase
             return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }
+
+    [HttpGet("{chatId}/isMember/{userId}")]
+    public async Task<IActionResult> CheckIsMember(int chatId, int userId)
+    {
+        try
+        {
+            bool isMember = await chatService.IsMemberOfChatAsync(chatId, userId);
+            return Ok(isMember);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    [HttpGet("{chatId}/isOwner/{userId}")]
+    public async Task<IActionResult> CheckIsOwner(int chatId, int userId)
+    {
+        try
+        {
+            bool isOwner = await chatService.IsOwnerOfChatAsync(chatId, userId);
+            return Ok(isOwner);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
 }

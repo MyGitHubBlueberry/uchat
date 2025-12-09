@@ -16,8 +16,7 @@ namespace uchat_server.Services
         Task UploadAvatarAsync(int chatId, IFormFile file);
         Task<bool> RemoveGroupChatAvatarAsync(int chatId);
         Task<List<ChatMemberDto>> GetChatMembersAsync(int chatId);
-
-        //Task<bool> IsMemberOfChatAsync(int chatId, int userId);
-        //Task<bool> IsOwnerOfChatAsync(int chatId, int userId);
+        Task<bool> IsMemberOfChatAsync(int chatId, int userId);
+        Task<bool> IsOwnerOfChatAsync(int chatId, int userId);
     }
 }
