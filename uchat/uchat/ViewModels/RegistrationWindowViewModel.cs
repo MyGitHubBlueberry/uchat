@@ -90,29 +90,57 @@ public class RegistrationWindowViewModel : ViewModelBase, IClearNavigationStack
             return;
         }
 
-        if (Password != ConfirmPassword)
-        {
-            ErrorMessage = "Passwords do not match";
-            return;
-        }
-
-        if (Password.Length < 6)
-        {
-            ErrorMessage = "Password must be at least 6 characters";
-            return;
-        }
+        if(!PasswordValidation(Password, ConfirmPassword)) return;
 
         try
         {
-            await _serverClient.UserRegistration(Username, Password);
+            var user = await _serverClient.UserRegistration(Username, Password);
             
-            _navigationService.NavigateTo<LoginWindowViewModel>();
+            _userSession.CurrentUser = user;
+            _navigationService.NavigateTo<MainWindowViewModel>();
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Registration failed: {ex.Message}";
+            ErrorMessage = ex.Message;
         }
     }
 
+    private bool PasswordValidation(string Password, string SecondPassword)
+    {
+        if (Password.Length < 6)
+        {
+            ErrorMessage = "Password must be at least 6 characters";
+            return false;
+        }
+        if (Password.Length > 50)
+        {
+            ErrorMessage = "Password is too long";
+            return false;
+        }
+
+        bool hasDigit = false;
+        bool hasLetter = false;
+
+        foreach (char c in Password)
+        {
+            if (char.IsDigit(c)) hasDigit = true;
+            if (char.IsLetter(c)) hasLetter = true;
+            if (hasDigit && hasLetter) break;
+        }
+
+        if (!hasDigit || !hasLetter)
+        {
+            ErrorMessage = "Password must contain at least one letter and one digit";
+            return false;
+        }
+
+        if (Password != SecondPassword)
+        {
+            ErrorMessage = "Passwords do not match";
+            return false;
+        }
+
+        return true;
+    }
 }
 

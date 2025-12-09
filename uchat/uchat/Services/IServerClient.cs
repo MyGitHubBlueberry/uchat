@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using SharedLibrary.Models;
@@ -7,8 +6,8 @@ namespace uchat;
 
 public interface IServerClient
 {
-    Task UserRegistration(string username, string password);
-    Task<bool> UserLogin(string  username, string password);
+    Task<User> UserRegistration(string username, string password);
+    Task<User> UserLogin(string  username, string password);
     Task SendMessage(Message message, int chatId, List<string>? imagePaths = null);
     Task EditMessage(string newMessage, int chatId, int messageId);
     Task DeleteMessage(int chatId, int messageId);

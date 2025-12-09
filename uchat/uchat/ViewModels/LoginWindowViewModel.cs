@@ -88,10 +88,11 @@ public class LoginWindowViewModel : ViewModelBase, IClearNavigationStack
 
         try
         {
-            var success = await _serverClient.UserLogin(Username, Password);
+            var user = await _serverClient.UserLogin(Username, Password);
 
-            if (success)
+            if (user != null)
             {
+                _userSession.CurrentUser = user;
                 _navigationService.NavigateTo<MainWindowViewModel>();
             }
             else

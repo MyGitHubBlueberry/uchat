@@ -35,7 +35,7 @@ public class ServerClient : IServerClient
         _httpClient.BaseAddress = new Uri(_serverUrl);
     }
 
-    public async Task<bool> UserLogin(string username, string password)
+    public async Task<User> UserLogin(string username, string password)
     {
         try
         {
@@ -43,35 +43,74 @@ public class ServerClient : IServerClient
 
             if (!response.IsSuccessStatusCode)
             {
-                return false;
+                throw new Exception("Login failed: " + await response.Content.ReadAsStringAsync());
             }
 
             var loginResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
 
             if (loginResponse == null)
             {
-                return false;
+                throw new Exception("Invalid server response");
             }
 
             _currentUserId = loginResponse.UserId;
 
             await ConnectToHubAsync();
 
-            return true;
+            var user = new User
+            {
+                Id = loginResponse.UserId,
+                Name = loginResponse.Username,
+                Image = loginResponse.ImageUrl
+            };
+
+            return user;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return false;
+            throw new Exception("Error during user login: " + ex.Message);
         }
     }
 
-    public async Task UserRegistration(string username, string password)
+    public async Task<User> UserRegistration(string username, string password)
     {
-        // TODO: Implement actual server registration when UserController is ready
-        // For now, simulate a successful registration
-        await Task.Delay(500);
+        try
+        {
+            var request = new 
+            {
+                Username = username,
+                Password = password
+            };
 
-        Console.WriteLine($"Mock registration: {username}");
+            var response = await _httpClient.PostAsJsonAsync("/api/user/register", request);
+
+            if(!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception("Registration failed: " + errorContent);
+            }
+
+            var registerResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+            if (registerResponse is null)
+            {
+                throw new Exception("Invalid server response");
+            }
+
+            _currentUserId = registerResponse.UserId;
+            await ConnectToHubAsync();
+
+            return new User
+            {
+                Id = registerResponse.UserId,
+                Name = registerResponse.Username,
+                Image = registerResponse.ImageUrl
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Error during user registration: " + ex.Message);
+        }
     }
 
     public async Task SendMessage(Message mes, int chatId, List<string>? imagePaths = null)
