@@ -229,11 +229,15 @@ namespace uchat_server.Services
 
         public async Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId)
         {
-            DbChat dbChat = await context.Chats.FindAsync(chatId)
+            DbChat dbChat = await context
+                .Chats
+                .Include(c => c.Members)
+                .Where(c => c.Id == chatId)
+                .FirstOrDefaultAsync()
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
             if (!dbChat.Members.Where(m => m.UserId == userId).Any())
                 throw new InvalidDataException("The user is not in the chat");
-            if (dbChat.OwnerId != null)
+            if (dbChat.OwnerId == null)
                 throw new InvalidOperationException("This chat is not group chat");
 
             User owner = await userService.GetUserByIdAsync((int)dbChat.OwnerId);
