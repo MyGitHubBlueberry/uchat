@@ -255,7 +255,14 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            Messages.Add(CreateMessageViewModel(msg));
+            if (SelectedChat != null && msg.ChatId == SelectedChat.Chat.id)
+            {
+                Messages.Add(CreateMessageViewModel(msg));
+            }
+            else
+            {
+                Console.WriteLine($"Received message for chat {msg.ChatId}, but current chat is {SelectedChat?.Chat.id}");
+            }
         });
     }
     
