@@ -45,8 +45,8 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-    [HttpGet("chat/{chatId}")]
-    public IActionResult GetChatById(int chatId, [FromQuery] int userId) {
+    [HttpGet("chat/{chatId}-{userId}")]
+    public IActionResult GetChatById(int chatId, int userId) {
         try {
             return Ok(chatService.GetChatByIdAsync(chatId, userId));
         } catch (Exception ex) {
@@ -54,8 +54,8 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-    [HttpGet("groupChat/{chatId}")]
-    public IActionResult GetGroupChatById(int chatId, [FromQuery] int userId) {
+    [HttpGet("groupChat/{chatId}-{userId}")]
+    public IActionResult GetGroupChatById(int chatId, int userId) {
         try {
             return Ok(chatService.GetGroupChatByIdAsync(chatId, userId));
         } catch (Exception ex) {
