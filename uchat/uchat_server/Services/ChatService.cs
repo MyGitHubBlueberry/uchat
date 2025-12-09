@@ -11,8 +11,8 @@ namespace uchat_server.Services
     {
 
         private readonly byte[] masterKey = Convert.FromBase64String(configuration["MasterKey"]
-                                             ?? throw new Exception("MasterKey is missing in config")
-        );
+                ?? throw new Exception("MasterKey is missing in config")
+                );
 
         private async Task<bool> ChatExistsAsync(int chatId)
         {
@@ -50,9 +50,9 @@ namespace uchat_server.Services
             await context.Chats.AddAsync(dbChat);
 
             if (!context.UserRelations
-                .Where(r => r.SourceUserId == sourceUserId 
-                    && r.TargetUserId == targetUserId)
-                .Any())
+                    .Where(r => r.SourceUserId == sourceUserId 
+                        && r.TargetUserId == targetUserId)
+                    .Any())
             {
                 var relation = new DbUserRelation
                 {
@@ -65,9 +65,9 @@ namespace uchat_server.Services
             }
 
             if(!context.UserRelations
-                .Where(r => r.SourceUserId == targetUserId 
-                    && r.TargetUserId == sourceUserId)
-                .Any())
+                    .Where(r => r.SourceUserId == targetUserId 
+                        && r.TargetUserId == sourceUserId)
+                    .Any())
             {
                 var relation = new DbUserRelation
                 {
@@ -131,22 +131,22 @@ namespace uchat_server.Services
                     .ToList();
 
                 var members = dbUsers.Select(u => new DbChatMember
-                {
-                    UserId = u.Id,
-                    User = u,
-                    ChatId = dbChat.Id,
-                    Chat = dbChat,
-                });
+                        {
+                        UserId = u.Id,
+                        User = u,
+                        ChatId = dbChat.Id,
+                        Chat = dbChat,
+                        });
 
                 var existingRelations = new HashSet<(int, int)>(
                         (await context.UserRelations
-                            .Where(r => userIds.Contains(r.TargetUserId)
-                                    && userIds.Contains(r.SourceUserId)).ToListAsync()
-                            ).Select(r => (r.SourceUserId, r.TargetUserId)));
+                         .Where(r => userIds.Contains(r.TargetUserId)
+                             && userIds.Contains(r.SourceUserId)).ToListAsync()
+                        ).Select(r => (r.SourceUserId, r.TargetUserId)));
 
                 await context.UserRelations.AddRangeAsync(
-                    GetMissingRelations(dbUsers, existingRelations)
-                );
+                        GetMissingRelations(dbUsers, existingRelations)
+                        );
 
                 await context.ChatMembers.AddRangeAsync(members);
                 dbChat.Members.AddRange(members);
@@ -154,7 +154,7 @@ namespace uchat_server.Services
 
             await context.Chats.AddAsync(dbChat);
             context.SaveChanges();
-            
+
             return dbChat.Id;
         }
 
@@ -166,15 +166,15 @@ namespace uchat_server.Services
                 foreach (var target in dbUsers)
                 {
                     if (source.Id == target.Id ||
-                          existingPairs.Contains((source.Id, target.Id))) continue;
+                            existingPairs.Contains((source.Id, target.Id))) continue;
 
                     newRelations.Add(new DbUserRelation
-                    {
-                        SourceUserId = source.Id,
-                        SourceUser = source,
-                        TargetUserId = target.Id,
-                        TargetUser = target
-                    });
+                            {
+                            SourceUserId = source.Id,
+                            SourceUser = source,
+                            TargetUserId = target.Id,
+                            TargetUser = target
+                            });
 
                     existingPairs.Add((source.Id, target.Id));
                 }
@@ -247,27 +247,21 @@ namespace uchat_server.Services
 
         public async Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId)
         {
-            DbUser? user = await context.Users.FindAsync(userId)
-                ?? throw new Exception("User doesn't exist");
-            List<Chat> chats = new List<Chat>();
-            List<GroupChat> groupChats = new List<GroupChat>();
+            var members = await context.ChatMembers
+                .Where(m => m.UserId == userId)
+                .Include(m => m.Chat)
+                .ToListAsync();
 
-            if (user.Chats is List<DbChatMember> dbChats)
-            {
-                var groupItems = dbChats.Where(c => c.Chat.OwnerId == null);
-                var directItems = dbChats.Where(c => c.Chat.OwnerId != null);
+            var groupMembers = members.Where(m => m.Chat.OwnerId != null); 
+            var directMembers = members.Where(m => m.Chat.OwnerId == null);
 
-                var groupTasks = groupItems.Select(c => GetGroupChatByIdAsync(c.ChatId, userId));
-                var directTasks = directItems.Select(c => GetChatByIdAsync(c.ChatId, userId));
+            var groupTasks = groupMembers.Select(m => GetGroupChatByIdAsync(m.ChatId, userId));
+            var directTasks = directMembers.Select(m => GetChatByIdAsync(m.ChatId, userId));
 
-                var groups = await Task.WhenAll(groupTasks);
-                var directs = await Task.WhenAll(directTasks);
+            var groupChats = await Task.WhenAll(groupTasks);
+            var chats = await Task.WhenAll(directTasks);
 
-                groupChats.AddRange(groups);
-                chats.AddRange(directs);
-            }
-
-            return (chats, groupChats);
+            return (chats.ToList(), groupChats.ToList());
         }
     }
 }

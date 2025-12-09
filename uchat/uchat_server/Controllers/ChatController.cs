@@ -65,9 +65,13 @@ public class ChatController(IChatService chatService) : ControllerBase
 
 
     [HttpGet("{userId}/chats")]
-    public IActionResult GetUserChats(int userId) {
+    public async Task<IActionResult> GetUserChats(int userId) {
         try {
-            return Ok(chatService.GetUserChatsAsync(userId));
+            var test = await chatService.GetUserChatsAsync(userId);
+            return Ok(new {
+                    Chats = test.Item1,
+                    GroupChats = test.Item2,
+                    });
         } catch (Exception ex) {
             return BadRequest(ex.Message);
         }
