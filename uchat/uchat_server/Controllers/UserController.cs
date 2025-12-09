@@ -81,10 +81,6 @@ public class UserController(IUserService userService) : ControllerBase
         {
             return NotFound(ex.Message);
         }
-        catch (InvalidDataException ex)
-        {
-            return BadRequest(ex.Message);
-        }
         catch (Exception ex)
         {
             return StatusCode(500, "Internal server error: " + ex.Message);

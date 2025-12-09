@@ -115,12 +115,28 @@ public class ChatController(IChatService chatService) : ControllerBase
     [HttpPost("groupChat/avatar/{chatId}")]
     public async Task<IActionResult> UploadGroupChatAvatar(int chatId, [FromForm]IFormFile file) {
         try {
-            await chatService.UploadAvatar(chatId, file);
+            await chatService.UploadAvatarAsync(chatId, file);
             return Ok(new { Message = "Avatar uploaded successfully"});
         } catch (InvalidDataException ex) {
             return NotFound(ex.Message);
         } catch (Exception ex) {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("groupChat/avatar/{chatId}")]
+    public async Task<IActionResult> RemoveGroupChatAvatar(int chatId) {
+        try {
+            return Ok(new { Message = (await chatService.RemoveGroupChatAvatarAsync(chatId))
+                    ? "Avatar removed successfully"
+                    : "Group doesn't have an avatar"
+                    });
+        } catch (InvalidOperationException ex) {
+            return NotFound(ex.Message);
+        } catch (InvalidDataException ex) {
+            return NotFound(ex.Message);
+        } catch (Exception ex) {
+            return StatusCode(500, "Internal server error: " + ex.Message);
         }
     }
 }

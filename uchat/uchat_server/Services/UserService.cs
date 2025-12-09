@@ -134,8 +134,7 @@ namespace uchat_server.Services
             string? url = user.ImageUrl;
             user.ImageUrl = null;
             await context.SaveChangesAsync();
-            if (url is null)
-                throw new InvalidOperationException("User doen't have an avatar");
+            if (url is null) return false;
             return FileManager.Delete("ProfilePictures", url);
         }
 
