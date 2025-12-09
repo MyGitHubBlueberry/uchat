@@ -57,7 +57,7 @@ namespace uchat_server.Services
 
             if (user == null)
             {
-                throw new Exception("User not found.");
+                throw new Exception("User not found. Please check your username and try again.");
             }
 
             bool isPasswordCorrect = false;

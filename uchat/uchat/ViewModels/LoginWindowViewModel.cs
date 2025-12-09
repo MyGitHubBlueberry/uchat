@@ -102,7 +102,7 @@ public class LoginWindowViewModel : ViewModelBase, IClearNavigationStack
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Login failed: {ex.Message}";
+            ErrorMessage = ex.Message;
         }
         finally
         {

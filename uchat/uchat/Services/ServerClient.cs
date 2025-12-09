@@ -37,39 +37,32 @@ public class ServerClient : IServerClient
 
     public async Task<User> UserLogin(string username, string password)
     {
-        try
+        var response = await _httpClient.GetAsync($"/api/user/login?username={Uri.EscapeDataString(username)}&password={Uri.EscapeDataString(password)}");
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync($"/api/user/login?username={Uri.EscapeDataString(username)}&password={Uri.EscapeDataString(password)}");
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception("Login failed: " + await response.Content.ReadAsStringAsync());
-            }
-
-            var loginResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
-
-            if (loginResponse == null)
-            {
-                throw new Exception("Invalid server response");
-            }
-
-            _currentUserId = loginResponse.UserId;
-
-            await ConnectToHubAsync();
-
-            var user = new User
-            {
-                Id = loginResponse.UserId,
-                Name = loginResponse.Username,
-                Image = loginResponse.ImageUrl
-            };
-
-            return user;
+            throw new Exception(await response.Content.ReadAsStringAsync());
         }
-        catch (Exception ex)
+
+        var loginResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        if (loginResponse == null)
         {
-            throw new Exception("Error during user login: " + ex.Message);
+            throw new Exception("Invalid server response");
         }
+
+        _currentUserId = loginResponse.UserId;
+
+        await ConnectToHubAsync();
+
+        var user = new User
+        {
+            Id = loginResponse.UserId,
+            Name = loginResponse.Username,
+            Image = loginResponse.ImageUrl
+        };
+
+        return user;
     }
 
     public async Task<User> UserRegistration(string username, string password)

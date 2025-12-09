@@ -33,7 +33,7 @@ public class UserController(IUserService userService) : ControllerBase
         }
         catch (Exception ex)
         {
-            return Unauthorized(new { Error = ex.Message });
+            return Unauthorized(ex.Message);
         }
     }
 
