@@ -196,9 +196,13 @@ namespace uchat_server.Services
 
         public async Task<Chat> GetChatByIdAsync(int chatId, int userId)
         {
-            var dbChat = await context.Chats.FindAsync(chatId)
+            var dbChat = await context.Chats
+                .Include(c => c.Members)
+                .FirstOrDefaultAsync(c => c.Id == chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
-            if (!dbChat.Members.Where(m => m.UserId == userId).Any())
+            if (!dbChat.Members.Any())
+                throw new InvalidDataException("The chat is empty");
+            if (!dbChat.Members.Any(m => m.UserId == userId))
                 throw new InvalidDataException("The user is not in the chat");
             if (dbChat.OwnerId != null)
                 throw new InvalidOperationException("This chat is group chat");
