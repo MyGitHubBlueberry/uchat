@@ -4,10 +4,11 @@ namespace uchat_server.Services
 {
     public interface IChatService
     {
-        Task<int> CreateChatRoomAsync(string chatName);
-        // TODO: ADD SECRET KEY PARAMETER
+        Task<int> CreateChatAsync(int sourceUserId, int targetUserId);
+        Task<int> CreateGroupChatAsync(GroupChat groupChat);
         Task<Chat> GetChatByIdAsync(int chatId, int userId);
-        Task<List<Chat>> GetUserChatsAsync(int userId);
+        Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId);
+        Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId);
         Task<bool> DeleteChatAsync(int chatId);
 
         //Task AddChatMemberAsync(int chatId, int userId);

@@ -33,7 +33,7 @@ namespace uchat_server.Services
                 ?? throw new InvalidOperationException("Can't create chat for user that doesn't exist");
 
             var chatExists = await context.Chats
-                .AnyAsync(c => !c.IsGroupChat
+                .AnyAsync(c => c.OwnerId == null
                         && c.Members.Any(m => m.UserId == sourceUserId)
                         && c.Members.Any(m => m.UserId == targetUserId));
 
@@ -49,17 +49,32 @@ namespace uchat_server.Services
 
             await context.Chats.AddAsync(dbChat);
 
-            DbUserRelation? relation = context.UserRelations
-                .Where(r => r.SourceUserId == sourceUserId && r.TargetUserId == targetUserId).First();
-
-            if (relation is null)
+            if (!context.UserRelations
+                .Where(r => r.SourceUserId == sourceUserId 
+                    && r.TargetUserId == targetUserId)
+                .Any())
             {
-                relation = new DbUserRelation
+                var relation = new DbUserRelation
                 {
                     SourceUserId = sourceUserId,
                     SourceUser = dbSourceUser,
                     TargetUserId = targetUserId,
                     TargetUser = dbTargetUser,
+                };
+                await context.UserRelations.AddAsync(relation);
+            }
+
+            if(!context.UserRelations
+                .Where(r => r.SourceUserId == targetUserId 
+                    && r.TargetUserId == sourceUserId)
+                .Any())
+            {
+                var relation = new DbUserRelation
+                {
+                    SourceUserId = targetUserId,
+                    SourceUser = dbTargetUser,
+                    TargetUserId = sourceUserId,
+                    TargetUser = dbSourceUser,
                 };
                 await context.UserRelations.AddAsync(relation);
             }
@@ -86,33 +101,32 @@ namespace uchat_server.Services
             return dbChat.Id;
         }
 
-        public async Task<int> CreateGroupChatAsync(string chatName, int creatorId, string? description, string? imageUrl, params int[] userIds)
+        public async Task<int> CreateGroupChatAsync(GroupChat groupChat)
         {
             byte[] rawChatKey = Aes.Create().Key;
             string keyAsString = Convert.ToBase64String(rawChatKey);
             EncryptedMessage secureKeyPackage = keyAsString.Encrypt(masterKey);
 
-            DbUser dbUser = await context.Users.FindAsync(creatorId)
-                ?? throw new InvalidOperationException("Can't create group chat for user that doesn't exist");
 
             DbChat dbChat = new DbChat
             {
-                Title = chatName,
+                Title = groupChat.name,
                 EncryptedKey = secureKeyPackage.cipheredText,
                 KeyIV = secureKeyPackage.iv,
-                Description = description ?? null,
-                ImageUrl = imageUrl ?? null,
-                OwnerId = creatorId,
-                Owner = dbUser,
+                Description = groupChat.description,
+                ImageUrl = groupChat.picture,
+                OwnerId = groupChat.owner.Id,
+                Owner = context.Users.Find(groupChat.owner.Id),
             };
 
             // TODO: save image if exists
 
-            if (userIds.Length != 0)
+            if (groupChat.participants.Count != 0)
             {
+                var userIds = groupChat.participants.Select(p => p.Id).ToList();
+
                 var dbUsers = context.Users
                     .Where(u => userIds.Contains(u.Id))
-                    .Append(dbUser)
                     .DistinctBy(u => u.Id)
                     .ToList();
 
@@ -186,7 +200,7 @@ namespace uchat_server.Services
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
             if (!dbChat.Members.Where(m => m.UserId == userId).Any())
                 throw new InvalidDataException("The user is not in the chat");
-            if (dbChat.IsGroupChat)
+            if (dbChat.OwnerId != null)
                 throw new InvalidOperationException("This chat is group chat");
             var source = await userService.GetUserByIdAsync(userId);
             var target = await userService.GetUserByIdAsync(dbChat
@@ -201,13 +215,13 @@ namespace uchat_server.Services
             return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked);
         }
 
-        public async Task<GroupChat> GetGroupChatsByIdAsync(int chatId, int userId)
+        public async Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId)
         {
             DbChat dbChat = await context.Chats.FindAsync(chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
             if (!dbChat.Members.Where(m => m.UserId == userId).Any())
                 throw new InvalidDataException("The user is not in the chat");
-            if (!dbChat.IsGroupChat)
+            if (dbChat.OwnerId != null)
                 throw new InvalidOperationException("This chat is not group chat");
 
             User owner = await userService.GetUserByIdAsync((int)dbChat.OwnerId);
@@ -236,10 +250,10 @@ namespace uchat_server.Services
 
             if (user.Chats is List<DbChatMember> dbChats)
             {
-                var groupItems = dbChats.Where(c => c.Chat.IsGroupChat);
-                var directItems = dbChats.Where(c => !c.Chat.IsGroupChat);
+                var groupItems = dbChats.Where(c => c.Chat.OwnerId == null);
+                var directItems = dbChats.Where(c => c.Chat.OwnerId != null);
 
-                var groupTasks = groupItems.Select(c => GetGroupChatsByIdAsync(c.ChatId, userId));
+                var groupTasks = groupItems.Select(c => GetGroupChatByIdAsync(c.ChatId, userId));
                 var directTasks = directItems.Select(c => GetChatByIdAsync(c.ChatId, userId));
 
                 var groups = await Task.WhenAll(groupTasks);
