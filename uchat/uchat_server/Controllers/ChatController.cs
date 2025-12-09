@@ -63,7 +63,6 @@ public class ChatController(IChatService chatService) : ControllerBase
         }
     }
 
-
     [HttpGet("{userId}/chats")]
     public async Task<IActionResult> GetUserChats(int userId) {
         try {
@@ -74,6 +73,20 @@ public class ChatController(IChatService chatService) : ControllerBase
                     });
         } catch (Exception ex) {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("{chatId}/members")]
+    public async Task<IActionResult> GetChatMembers(int chatId)
+    {
+        try
+        {
+            var members = await chatService.GetChatMembersAsync(chatId);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
         }
     }
 

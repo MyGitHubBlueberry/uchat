@@ -274,4 +274,22 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         if (url is null) return false;
         return FileManager.Delete(avatarFolder, url);
     }
+
+    public async Task<List<ChatMemberDto>> GetChatMembersAsync(int chatId)
+    {
+        bool exists = await context.Chats.AnyAsync(c => c.Id == chatId);
+        if (!exists) throw new Exception("Chat not found");
+
+        return await context.ChatMembers
+            .Where(m => m.ChatId == chatId)
+            .Select(m => new ChatMemberDto
+            {
+                UserId = m.UserId,
+                UserName = m.User.Name, 
+                ImageUrl = m.User.ImageUrl,
+                IsAdmin = m.IsAdmin,
+                IsMuted = m.IsMuted
+            })
+            .ToListAsync();
+    }
 }
