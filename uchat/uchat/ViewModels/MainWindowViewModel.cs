@@ -205,7 +205,10 @@ public partial class MainWindowViewModel : ViewModelBase
         
         foreach (var user in users)
         {
-            SearchResults.Add(user);
+            if (user.Id != _userSession.CurrentUser?.Id)
+            {
+                SearchResults.Add(user);
+            }
         }
     }
 }
