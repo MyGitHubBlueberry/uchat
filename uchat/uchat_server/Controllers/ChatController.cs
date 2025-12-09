@@ -114,6 +114,10 @@ public class ChatController(IChatService chatService) : ControllerBase
 
     [HttpPost("groupChat/avatar/{chatId}")]
     public async Task<IActionResult> UploadGroupChatAvatar(int chatId, [FromForm]IFormFile file) {
+        if (file is null || file.Length == 0) {
+            return BadRequest("No file uploaded.");
+        }
+
         try {
             await chatService.UploadAvatarAsync(chatId, file);
             return Ok(new { Message = "Avatar uploaded successfully"});
@@ -127,10 +131,7 @@ public class ChatController(IChatService chatService) : ControllerBase
     [HttpDelete("groupChat/avatar/{chatId}")]
     public async Task<IActionResult> RemoveGroupChatAvatar(int chatId) {
         try {
-            return Ok(new { Message = (await chatService.RemoveGroupChatAvatarAsync(chatId))
-                    ? "Avatar removed successfully"
-                    : "Group doesn't have an avatar"
-                    });
+            return Ok(await chatService.RemoveGroupChatAvatarAsync(chatId));
         } catch (InvalidOperationException ex) {
             return NotFound(ex.Message);
         } catch (InvalidDataException ex) {

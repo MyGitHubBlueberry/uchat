@@ -122,15 +122,22 @@ namespace uchat_server.Services
         {
             DbUser user = await context.Users.FindAsync(userId)
                 ?? throw new InvalidOperationException("Can't assign avatar to user who doesn't exist");
+            await UploadProfilePicture(user, file);
+        }
 
+        private async Task UploadProfilePicture(DbUser user, IFormFile file) {
+            await RemoveProfilePicture(user);
             user.ImageUrl = await FileManager.Save(file, "ProfilePictures");
-
             await context.SaveChangesAsync();
         }
 
         public async Task<bool> RemoveProfilePicture(int userId) {
             DbUser user = await context.Users.FindAsync(userId)
                 ?? throw new InvalidOperationException("Can't remove avatar from user who doesn't exist");
+            return await RemoveProfilePicture(user);
+        }
+
+        private async Task<bool> RemoveProfilePicture(DbUser user) {
             string? url = user.ImageUrl;
             user.ImageUrl = null;
             await context.SaveChangesAsync();
