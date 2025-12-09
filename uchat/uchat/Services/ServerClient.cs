@@ -192,29 +192,15 @@ public class ServerClient : IServerClient
 
     public async Task<Chat[]> GetChats()
     {
-        var mockChat = new Chat(
-            id: 1,
-            userFrom: new User() {
-                Name = "You",
-                Image = null,
-                Friends = [],
-                Chats = [],
-                GroupChats = []
-            },
-            userTo: new User() {
-                Name = "Other User",
-                Image = null,
-                Friends = [],
-                Chats = [],
-                GroupChats = []
-            },
-            muted: false,
-            blocked: false
-        );
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
 
-        await Task.Delay(50);
-
-        return [mockChat];
+        var result = await response.Content.ReadFromJsonAsync<Chat[]>();
+        return result ?? [];
     }
 
     private async Task ConnectToHubAsync()
