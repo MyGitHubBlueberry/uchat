@@ -17,11 +17,6 @@ public partial class ProfileWindow : Window
         DataContext = viewModel;
     }
 
-    private void OnBackgroundClicked(object? sender, PointerPressedEventArgs e)
-    {
-        Close();
-    }
-
     private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var element = e.Source as Control;

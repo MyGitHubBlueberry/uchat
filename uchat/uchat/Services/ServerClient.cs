@@ -298,7 +298,7 @@ public class ServerClient : IServerClient
         }
     }
 
-    public async Task DeleteAccount(int userId)
+    public async Task<bool> DeleteAccount(int userId)
     {
         var response = await _httpClient.DeleteAsync($"{_serverUrl}/api/user/{userId}");
         
@@ -306,6 +306,8 @@ public class ServerClient : IServerClient
         {
             throw new Exception("Error deleting account");
         }
+
+        return true;
     }
 
     public async Task<List<User>> SearchUsers(string partialName)

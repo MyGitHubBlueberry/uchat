@@ -1,8 +1,9 @@
+using Avalonia;
+using Avalonia.Platform.Storage;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Platform.Storage;
-using CommunityToolkit.Mvvm.ComponentModel;
 using uchat.Commands;
 using uchat.Services;
 
@@ -26,7 +27,6 @@ public partial class ProfileViewModel : ViewModelBase
     public ICommand RemovePictureCommand { get; }
     public ICommand UpdatePasswordCommand { get; }
     public ICommand DeleteAccountCommand { get; }
-    public ICommand CloseCommand { get; }
 
     public ProfileViewModel(IServerClient serverClient, IUserSession userSession, Action closeAction)
     {
@@ -41,7 +41,6 @@ public partial class ProfileViewModel : ViewModelBase
         RemovePictureCommand = new RelayCommand(RemovePictureAsync);
         UpdatePasswordCommand = new RelayCommand(UpdatePasswordAsync);
         DeleteAccountCommand = new RelayCommand(DeleteAccountAsync);
-        CloseCommand = new RelayCommand(() => _closeAction());
     }
 
     private async Task UploadPictureAsync()
@@ -174,10 +173,16 @@ public partial class ProfileViewModel : ViewModelBase
             IsLoading = true;
             StatusMessage = string.Empty;
 
-            await _serverClient.DeleteAccount(_userSession.CurrentUser.Id);
-            
-            _userSession.Clear();
-            _closeAction();
+            var result = await _serverClient.DeleteAccount(_userSession.CurrentUser.Id);
+
+            if (result)
+            {
+                _userSession.Clear();
+                _closeAction();
+
+
+            }
+
         }
         catch (Exception ex)
         {
