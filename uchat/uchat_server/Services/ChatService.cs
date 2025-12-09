@@ -5,6 +5,7 @@ using uchat_server.Database;
 using uchat_server.Database.Models;
 using Microsoft.EntityFrameworkCore;
 using uchat_server.Models;
+using uchat_server.Files;
 
 namespace uchat_server.Services
 {
@@ -75,12 +76,12 @@ namespace uchat_server.Services
                 EncryptedKey = secureKeyPackage.cipheredText,
                 KeyIV = secureKeyPackage.iv,
                 Description = groupChat.description,
-                ImageUrl = groupChat.pictureUrl,
                 OwnerId = groupChat.ownerId,
                 Owner = owner,
             };
 
-            // TODO: save image if exists
+            if (groupChat.picture is not null)
+                await UploadAvatar(dbChat, groupChat.picture);
 
             var dbUsers = await Task.WhenAll(
                     groupChat.participants.Select(async id => 
@@ -238,8 +239,17 @@ namespace uchat_server.Services
 
         public async Task UploadAvatar(int chatId, IFormFile file) 
         {
-            if(!await ChatExistsAsync(chatId))
-                throw new Exception("Chat not exist");
+            DbChat chat = context.Chats.Find(chatId)
+                ?? throw new InvalidDataException("Chat not exist");
+            if (chat.OwnerId is null)
+                throw new InvalidOperationException("Can't change avator for regular chats");
+            await UploadAvatar(chat, file);
+            await context.SaveChangesAsync();
+        }
+
+        private async Task UploadAvatar(DbChat chat, IFormFile file) 
+        {
+            chat.ImageUrl = await FileManager.Save(file, Path.Combine("GroupChat", "Avatars"));
         }
     }
 }

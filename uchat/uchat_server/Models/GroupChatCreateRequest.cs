@@ -5,5 +5,5 @@ public record GroupChatCreateRequest(
         int ownerId,
         List<int> participants,
         bool muted,
-        string? pictureUrl,
+        IFormFile? picture,
         string? description);

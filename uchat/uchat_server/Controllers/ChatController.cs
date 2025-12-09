@@ -111,4 +111,16 @@ public class ChatController(IChatService chatService) : ControllerBase
             return BadRequest(new { Error = ex.Message });
         }
     }
+
+    [HttpPost("groupChat/avatar/{chatId}")]
+    public async Task<IActionResult> UploadGroupChatAvatar(int chatId, [FromForm]IFormFile file) {
+        try {
+            await chatService.UploadAvatar(chatId, file);
+            return Ok(new { Message = "Avatar uploaded successfully"});
+        } catch (InvalidDataException ex) {
+            return NotFound(ex.Message);
+        } catch (Exception ex) {
+            return BadRequest(ex.Message);
+        }
+    }
 }

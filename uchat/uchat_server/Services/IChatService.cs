@@ -13,6 +13,7 @@ namespace uchat_server.Services
         Task<bool> DeleteChatAsync(int chatId);
         Task AddChatMemberAsync(int chatId, int userId);
         Task<bool> RemoveChatMemberAsync(int chatId, int userId);
+        Task UploadAvatar(int chatId, IFormFile file);
 
         //Task<List<DbChatMember>> GetChatMembersAsync(int chatId);
         //Task<bool> IsMemberOfChatAsync(int chatId, int userId);
