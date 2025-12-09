@@ -121,21 +121,16 @@ namespace uchat_server.Services
                 .Include(c => c.Members)
                 .FirstOrDefaultAsync(c => c.Id == chatId)
                 ?? throw new InvalidDataException("Can't get chat that doesn't exist");
-            if (!dbChat.Members.Any())
-                throw new InvalidDataException("The chat is empty");
-            if (!dbChat.Members.Any(m => m.UserId == userId))
-                throw new InvalidDataException("The user is not in the chat");
             if (dbChat.OwnerId != null)
                 throw new InvalidOperationException("This chat is group chat");
+            var member = dbChat.Members.FirstOrDefault(m => m.UserId == userId)
+                ?? throw new InvalidDataException("User is not in this chat");
             var source = await userService.GetUserByIdAsync(userId);
             var target = await userService.GetUserByIdAsync(dbChat
                     .Members
                     .Where(m => m.UserId != userId)
                     .First()
                     .UserId);
-
-            var member = await context.ChatMembers.FindAsync(source.Id, chatId)
-                ?? throw new InvalidOperationException("Can't find the chat");
 
             return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked);
         }
