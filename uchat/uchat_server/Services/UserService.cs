@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using uchat_server.Database;
 using uchat_server.Database.Models;
 using uchat_server.Files;
@@ -9,6 +10,7 @@ namespace uchat_server.Services
     public class UserService : IUserService
     {
         private readonly AppDbContext context;
+        private readonly IServiceProvider serviceProvider;
 
         public UserService(AppDbContext context)
         {
@@ -177,11 +179,20 @@ namespace uchat_server.Services
             var user = await context.Users.FindAsync(userId);
             if (user == null) throw new Exception("User not found.");
 
-            // Check db conf, 
-            
-            // Clean up avatar file if exists
-            await RemoveProfilePicture(userId);
+            // Resolve ChatService manually to avoid Circular Dependency
+            var chatService = serviceProvider.GetRequiredService<IChatService>();
 
+            var chatIds = await context.ChatMembers
+                .Where(m => m.UserId == userId)
+                .Select(m => m.ChatId)
+                .ToListAsync();
+
+            foreach (var chatId in chatIds)
+            {
+                await chatService.RemoveChatMemberAsync(chatId, userId);
+            }
+
+            await RemoveProfilePicture(userId);
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }
