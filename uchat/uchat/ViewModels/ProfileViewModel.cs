@@ -13,6 +13,7 @@ public partial class ProfileViewModel : ViewModelBase
 {
     private readonly IServerClient _serverClient;
     private readonly IUserSession _userSession;
+    private readonly INavigationService _navigationService;
     private readonly Action _closeAction;
 
     [ObservableProperty] private string _username = string.Empty;
@@ -28,8 +29,12 @@ public partial class ProfileViewModel : ViewModelBase
     public ICommand UpdatePasswordCommand { get; }
     public ICommand DeleteAccountCommand { get; }
 
-    public ProfileViewModel(IServerClient serverClient, IUserSession userSession, Action closeAction)
+    public ProfileViewModel(IServerClient serverClient, 
+        IUserSession userSession, 
+        Action closeAction,
+        INavigationService navigationService)
     {
+        _navigationService = navigationService;
         _serverClient = serverClient;
         _userSession = userSession;
         _closeAction = closeAction;
@@ -178,9 +183,8 @@ public partial class ProfileViewModel : ViewModelBase
             if (result)
             {
                 _userSession.Clear();
-                _closeAction();
-
-
+                _closeAction.Invoke();
+                _navigationService.NavigateTo<RegistrationWindowViewModel>();
             }
 
         }

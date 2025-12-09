@@ -180,19 +180,18 @@ namespace uchat_server.Services
             if (user == null) throw new Exception("User not found.");
 
             // Resolve ChatService manually to avoid Circular Dependency
-            var chatService = serviceProvider.GetRequiredService<IChatService>();
+            //var chatService = serviceProvider.GetRequiredService<IChatService>();
 
-            var chatIds = await context.ChatMembers
-                .Where(m => m.UserId == userId)
-                .Select(m => m.ChatId)
-                .ToListAsync();
+            //var chatIds = await context.ChatMembers
+            //    .Where(m => m.UserId == userId)
+            //    .Select(m => m.ChatId)
+            //    .ToListAsync();
 
-            foreach (var chatId in chatIds)
-            {
-                await chatService.RemoveChatMemberAsync(chatId, userId);
-            }
+            //foreach (var chatId in chatIds)
+            //{
+            //    await chatService.RemoveChatMemberAsync(chatId, userId);
+            //}
 
-            await RemoveProfilePicture(userId);
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }

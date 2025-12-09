@@ -28,7 +28,7 @@ public class ServerClient : IServerClient
     public ServerClient(IConfiguration configuration, IUserSession userSession)
     {
         _userSession = userSession;
-        _serverUrl = configuration.GetValue<string>("App:ServerUrl") ?? "http://localhost:5248";
+        _serverUrl = configuration.GetValue<string>("App:ServerUrl") ?? "http://localhost:1234";
         
         _httpClient = new HttpClient();
 
@@ -351,7 +351,7 @@ public class ServerClient : IServerClient
         
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception("Error deleting account");
+            throw new Exception($"{response.Content}");
         }
 
         return true;

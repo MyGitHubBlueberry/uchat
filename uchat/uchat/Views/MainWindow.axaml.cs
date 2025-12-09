@@ -46,10 +46,12 @@ public partial class MainWindow : FocusDetachableUserControl
 
         var serverClient = serviceProvider.GetRequiredService<IServerClient>();
         var userSession = serviceProvider.GetRequiredService<IUserSession>();
-        
-        var profileViewModel = new ProfileViewModel(serverClient, userSession, null);
-        var profileWindow = new ProfileWindow(profileViewModel);
-        
+        var navigationService = serviceProvider.GetRequiredService<INavigationService>();
+
+        var profileWindow = new ProfileWindow();
+        var profileViewModel = new ProfileViewModel(serverClient, userSession, () => profileWindow.Close(), navigationService);
+        profileWindow.DataContext = profileViewModel;
+
         await profileWindow.ShowDialog(mainWindow);
     }
 
