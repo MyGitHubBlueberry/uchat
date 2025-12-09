@@ -80,6 +80,7 @@ public class ChatHub : Hub
         {
             if (_connectedUsers.TryGetValue(userId, out var connectionIds))
             {
+                // TODO: IMPLEMENT
                 Console.WriteLine($"User {userId} leaving all chats");
             }
         }
