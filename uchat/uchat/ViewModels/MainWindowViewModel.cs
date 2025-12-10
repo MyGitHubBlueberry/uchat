@@ -90,9 +90,35 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnReconnected()
     {
-        Dispatcher.UIThread.InvokeAsync(() =>
+        Dispatcher.UIThread.InvokeAsync(async () =>
         {
             IsReconnecting = false;
+
+            if (_currentChatId.HasValue && SelectedChat != null)
+            {
+                try
+                {
+                    List<int> memberIds;
+                    if (SelectedChat is ChatViewModel chat)
+                    {
+                        memberIds = new List<int> { chat.Chat.userFrom.Id, chat.Chat.userTo.Id };
+                    }
+                    else if (SelectedChat is GroupChatViewModel groupChat)
+                    {
+                        memberIds = groupChat.GroupChat.participants.Select(p => p.Id).ToList();
+                    }
+                    else
+                    {
+                        return;
+                    }
+
+                    await _serverClient.JoinChatGroup(_currentChatId.Value, memberIds);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error from reconect: {ex.Message}");
+                }
+            }
         });
     }
 
