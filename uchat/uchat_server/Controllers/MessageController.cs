@@ -38,16 +38,6 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         return await messageService.GetChatMessagesDtoAsync(chatId, pageNumber, pageSize);
     }
 
-    [HttpPatch("text/{messageId}")]
-    public async Task<IActionResult> ChangeMessageText(int messageId, string text) {
-        try {
-            await messageService.ChangeMessageTextAsync(messageId, text);
-        } catch (InvalidDataException ex) {
-            return NotFound(ex.Message);
-        }
-        return Ok(new { Status = "Changed" });
-    }
-
     [HttpPost("attachment/{messageId}")]
     public async Task<IActionResult> AddAttachments(int messageId, [FromForm] params IFormFile[] files) {
         try {
@@ -66,6 +56,38 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
                     ? "Removed" : "Nothing to remove"
                 });
         } catch (InvalidDataException ex) {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPut("{messageId}")]
+    public async Task<IActionResult> EditMessage(int messageId, [FromBody] string newContent)
+    {
+        try
+        {
+            var updatedMessage = await messageService.EditMessageAsync(messageId, newContent);
+            await hubContext.Clients.Group(updatedMessage.ChatId.ToString())
+                .SendAsync("MessageEdited", updatedMessage);
+            return Ok(updatedMessage);
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpDelete("{messageId}")]
+    public async Task<IActionResult> DeleteMessage(int messageId)
+    {
+        try
+        {
+            int chatId = await messageService.DeleteMessageAsync(messageId);
+            await hubContext.Clients.Group(chatId.ToString())
+                .SendAsync("MessageDeleted", messageId);
+            return Ok(new { Status = "Deleted" });
+        }
+        catch (InvalidDataException ex)
+        {
             return NotFound(ex.Message);
         }
     }

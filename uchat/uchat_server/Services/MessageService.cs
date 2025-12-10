@@ -58,6 +58,8 @@ namespace uchat_server.Services
                     ChatId = m.ChatId,
                     SenderName = m.Sender != null && m.Sender.User != null ? m.Sender.User.Name : string.Empty,
                     Timestamp = m.TimeSent,
+                    LastEdited = m.TimeEdited,
+                    IsEdited = m.TimeEdited.HasValue,
                     Attachments = m.Attachments != null ? m.Attachments.Select(a => new Attachment
                     {
                         Id = a.Id,
@@ -93,7 +95,7 @@ namespace uchat_server.Services
             }
 
             (byte[] text, byte[] iv) = msg.Content.Encrypt(_masterKey);
-            DbMessage dbMsg = new DbMessage()
+            DbMessage dbMsg = new()
             {
                 CipheredText = text,
                 Iv = iv,
@@ -123,6 +125,17 @@ namespace uchat_server.Services
             await db.Messages.AddAsync(dbMsg);
             await db.SaveChangesAsync();
 
+            msg.Id = dbMsg.Id;
+            
+            if (dbMsg.Attachments != null && dbMsg.Attachments.Count > 0)
+            {
+                msg.Attachments = [.. dbMsg.Attachments.Select(a => new Attachment
+                {
+                    Id = a.Id,
+                    Url = a.Url
+                })];
+            }
+
             var chatMembers = await db.ChatMembers
                 .Where(m => m.ChatId == msg.ChatId)
                 .ToListAsync();
@@ -145,17 +158,6 @@ namespace uchat_server.Services
 
             var encryptedMessage = new EncryptedMessage(message.CipheredText, message.Iv);
             return encryptedMessage.Decrypt(_masterKey);
-        }
-
-        public async Task ChangeMessageTextAsync(int messageId, string text)
-        {
-            var message = await db.Messages.FindAsync(messageId)
-                ?? throw new InvalidDataException("Message not found");
-            message.TimeEdited = DateTime.UtcNow;
-            (byte[] encipted, byte[] iv) = text.Encrypt(_masterKey);
-            message.Iv = iv;
-            message.CipheredText = encipted;
-            await db.SaveChangesAsync();
         }
         
         public async Task<bool> RemoveAttachmentsAsync(int messageId, params int[]? idxes)
@@ -208,6 +210,62 @@ namespace uchat_server.Services
                             Url = url
                         }));
             await db.SaveChangesAsync();
+        }
+
+        public async Task<Message> EditMessageAsync(int messageId, string newContent)
+        {
+            var dbMessage = await db.Messages
+                .Include(m => m.Sender)
+                .ThenInclude(s => s.User)
+                .Include(m => m.Attachments)
+                .FirstOrDefaultAsync(m => m.Id == messageId)
+                ?? throw new InvalidDataException("Message not found");
+
+            (byte[] encrypted, byte[] iv) = newContent.Encrypt(_masterKey);
+            dbMessage.CipheredText = encrypted;
+            dbMessage.Iv = iv;
+            dbMessage.TimeEdited = DateTime.UtcNow;
+
+            await db.SaveChangesAsync();
+
+            return new Message
+            {
+                Id = dbMessage.Id,
+                Content = newContent,
+                ChatId = dbMessage.ChatId,
+                SenderName = dbMessage.Sender.User.Name,
+                Timestamp = dbMessage.TimeSent,
+                LastEdited = dbMessage.TimeEdited,
+                IsEdited = true,
+                Attachments = dbMessage.Attachments?.Select(a => new Attachment
+                {
+                    Id = a.Id,
+                    Url = a.Url
+                }).ToList()
+            };
+        }
+
+        public async Task<int> DeleteMessageAsync(int messageId)
+        {
+            var dbMessage = await db.Messages
+                .Include(m => m.Attachments)
+                .FirstOrDefaultAsync(m => m.Id == messageId)
+                ?? throw new InvalidDataException("Message not found");
+
+            int chatId = dbMessage.ChatId;
+
+            if (dbMessage.Attachments != null && dbMessage.Attachments.Count > 0)
+            {
+                foreach (var attachment in dbMessage.Attachments)
+                {
+                    FileManager.Delete(_attachmentFolder, attachment.Url);
+                }
+            }
+
+            db.Messages.Remove(dbMessage);
+            await db.SaveChangesAsync();
+            
+            return chatId;
         }
     }
 }

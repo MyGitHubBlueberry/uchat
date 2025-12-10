@@ -31,6 +31,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private bool _shouldScrollToBottom;
     [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private MessageViewModel? _editingMessage;
+    [ObservableProperty] private string _editText = string.Empty;
 
     public string SelectedChatName => SelectedChat?.DisplayName ?? "Select a chat";
     
@@ -44,6 +46,8 @@ public partial class MainWindowViewModel : ViewModelBase
         _serverClient.OnMessageReceived += OnMessageReceived;
         _serverClient.OnNewChat += OnNewChat;
         _serverClient.OnNewGroupChat += OnNewGroupChat;
+        _serverClient.OnMessageEdited += OnMessageEdited;
+        _serverClient.OnMessageDeleted += OnMessageDeleted;
         
         OpenProfileCommand = new RelayCommand(OpenProfile);
 
@@ -163,7 +167,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         MessageText = "";
 
-        await _serverClient.SendMessage(msg, chatId, AttachedImages.Count > 0 ? AttachedImages.ToList() : null);
+        await _serverClient.SendMessage(msg, chatId, AttachedImages.Count > 0 ? [.. AttachedImages] : null);
         
         if (AttachedImages.Count > 0)
         {
@@ -292,6 +296,87 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Console.WriteLine($"Received new group chat: {groupChat.name} (ID: {groupChat.id})");
         });
+    }
+
+    private void OnMessageEdited(Message msg)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var messageViewModel = Messages.FirstOrDefault(m => m.Id == msg.Id);
+            if (messageViewModel != null)
+            {
+                var index = Messages.IndexOf(messageViewModel);
+                Messages[index] = CreateMessageViewModel(msg);
+            }
+        });
+    }
+
+    private void OnMessageDeleted(int messageId)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var messageViewModel = Messages.FirstOrDefault(m => m.Id == messageId);
+            if (messageViewModel != null)
+            {
+                Messages.Remove(messageViewModel);
+            }
+        });
+    }
+
+    [RelayCommand]
+    private void StartEditMessage(MessageViewModel message)
+    {
+        if (message.Id <= 0)
+        {
+            Console.WriteLine("Cannot edit message without valid ID");
+            return;
+        }
+        
+        EditingMessage = message;
+        EditText = message.Content;
+    }
+
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        EditingMessage = null;
+        EditText = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task SaveEdit()
+    {
+        if (EditingMessage == null || string.IsNullOrWhiteSpace(EditText)) return;
+
+        try
+        {
+            await _serverClient.EditMessage(EditText, EditingMessage.ChatId, EditingMessage.Id);
+            EditingMessage = null;
+            EditText = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error editing message: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteMessage(MessageViewModel message)
+    {
+        if (message.Id <= 0)
+        {
+            Console.WriteLine("Cannot delete message without valid ID");
+            return;
+        }
+        
+        try
+        {
+            await _serverClient.DeleteMessage(message.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting message: {ex.Message}");
+        }
     }
     
     private void OpenProfile()

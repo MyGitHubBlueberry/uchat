@@ -27,4 +27,10 @@ public class MessageViewModel
     public int ChatId => _message.ChatId;
     
     public List<Attachment>? Attachments => _message.Attachments;
+    
+    public bool IsEdited => _message.IsEdited;
+    
+    public DateTime? LastEdited => _message.LastEdited;
+    
+    public bool CanEdit => Id > 0 && IsFromCurrentUser;
 }

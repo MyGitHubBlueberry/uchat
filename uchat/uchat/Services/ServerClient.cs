@@ -25,6 +25,8 @@ public class ServerClient : IServerClient
     public event Action<Message>? OnMessageReceived;
     public event Action<Chat>? OnNewChat;
     public event Action<GroupChat>? OnNewGroupChat;
+    public event Action<Message>? OnMessageEdited;
+    public event Action<int>? OnMessageDeleted;
     public event Action? OnDisconnected;
 
     public ServerClient(IConfiguration configuration, IUserSession userSession)
@@ -172,14 +174,24 @@ public class ServerClient : IServerClient
         }
     }
 
-    public Task EditMessage(string newMessage, int chatId, int messageId)
+    public async Task EditMessage(string newMessage, int chatId, int messageId)
     {
-        throw new NotImplementedException();
+        var response = await _httpClient.PutAsJsonAsync($"{_serverUrl}/api/message/{messageId}", newMessage);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Error editing message: {await response.Content.ReadAsStringAsync()}");
+        }
     }
 
-    public Task DeleteMessage(int chatId, int messageId)
+    public async Task DeleteMessage(int messageId)
     {
-        throw new NotImplementedException();
+        var response = await _httpClient.DeleteAsync($"{_serverUrl}/api/message/{messageId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Error deleting message");
+        }
     }
 
     public async Task<List<Message>> GetMessages(int chatId)
@@ -307,6 +319,16 @@ public class ServerClient : IServerClient
         _connection.On<GroupChat>("NewGroupChat", (groupChat) =>
         {
             OnNewGroupChat?.Invoke(groupChat);
+        });
+
+        _connection.On<Message>("MessageEdited", (message) =>
+        {
+            OnMessageEdited?.Invoke(message);
+        });
+
+        _connection.On<int>("MessageDeleted", (messageId) =>
+        {
+            OnMessageDeleted?.Invoke(messageId);
         });
 
         _connection.Closed += error =>

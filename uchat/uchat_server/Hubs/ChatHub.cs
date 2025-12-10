@@ -76,6 +76,18 @@ public class ChatHub : Hub
         Console.WriteLine($"Client {Context.ConnectionId} left chat {chatId}");
     }
 
+    public async Task EditMessage(Message message)
+    {
+        await Clients.Group(message.ChatId.ToString()).SendAsync("MessageEdited", message);
+        Console.WriteLine($"Message {message.Id} edited in chat {message.ChatId}");
+    }
+
+    public async Task DeleteMessage(int messageId, int chatId)
+    {
+        await Clients.Group(chatId.ToString()).SendAsync("MessageDeleted", messageId);
+        Console.WriteLine($"Message {messageId} deleted from chat {chatId}");
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var connectionId = Context.ConnectionId;

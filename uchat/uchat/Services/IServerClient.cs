@@ -10,13 +10,15 @@ public interface IServerClient
     event Action<Message>? OnMessageReceived;
     event Action<Chat>? OnNewChat;
     event Action<GroupChat>? OnNewGroupChat;
+    event Action<Message>? OnMessageEdited;
+    event Action<int>? OnMessageDeleted;
     event Action? OnDisconnected;
     
     Task<User> UserRegistration(string username, string password);
     Task<User> UserLogin(string  username, string password);
     Task SendMessage(Message message, int chatId, List<string>? imagePaths = null);
     Task EditMessage(string newMessage, int chatId, int messageId);
-    Task DeleteMessage(int chatId, int messageId);
+    Task DeleteMessage(int messageId);
     Task<List<Message>> GetMessages(int chatId, int pageNumber = 1, int pageSize = 50);
     Task<User> GetUserInfo(int chatId, int messageId);
     Task<Chat[]> GetChats();
