@@ -224,6 +224,7 @@ namespace uchat_server.Services
         {
             if (userId == targetUserId) throw new InvalidOperationException("You cannot block yourself.");
 
+            // --- 1. UserRelations ---
             var relation = await context.UserRelations
                 .FirstOrDefaultAsync(r => r.SourceUserId == userId && r.TargetUserId == targetUserId);
 
@@ -244,13 +245,27 @@ namespace uchat_server.Services
                 relation.IsFriend = false;
             }
 
-            // Remove the Reverse friendship too (Target -> Source)
+            // Remove reverse friendship
             var reverseRelation = await context.UserRelations
-                 .FirstOrDefaultAsync(r => r.SourceUserId == targetUserId && r.TargetUserId == userId);
-            
-            if (reverseRelation != null)
+                    .FirstOrDefaultAsync(r => r.SourceUserId == targetUserId && r.TargetUserId == userId);
+            if (reverseRelation != null) reverseRelation.IsFriend = false;
+
+            // --- 2. DbChatMember ---
+            var commonChat = await context.Chats
+                .Where(c => c.OwnerId == null) 
+                .Where(c => c.Members.Any(m => m.UserId == userId) && 
+                            c.Members.Any(m => m.UserId == targetUserId))
+                .FirstOrDefaultAsync();
+
+            if (commonChat != null)
             {
-                reverseRelation.IsFriend = false;
+                var myMemberRecord = await context.ChatMembers
+                    .FirstOrDefaultAsync(m => m.ChatId == commonChat.Id && m.UserId == userId);
+
+                if (myMemberRecord != null)
+                {
+                    myMemberRecord.IsBlocked = true;
+                }
             }
 
             await context.SaveChangesAsync();
