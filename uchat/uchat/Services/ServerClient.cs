@@ -27,8 +27,11 @@ public class ServerClient : IServerClient
 
     public ServerClient(IConfiguration configuration, IUserSession userSession)
     {
+        var envPort = Environment.GetEnvironmentVariable("UCHAT_SERVER_PORT", EnvironmentVariableTarget.User);
+        var port = string.IsNullOrEmpty(envPort) ? "5000" : envPort;
+
+        _serverUrl = $"http://localhost:{port}";
         _userSession = userSession;
-        _serverUrl = configuration.GetValue<string>("App:ServerUrl") ?? "http://localhost:1234";
         
         _httpClient = new HttpClient();
 

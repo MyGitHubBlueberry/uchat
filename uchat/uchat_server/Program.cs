@@ -11,6 +11,8 @@ class Program {
 
         if (!Parser.Parse(args, out port)) return;
 
+        Environment.SetEnvironmentVariable("UCHAT_SERVER_PORT", port.ToString(), EnvironmentVariableTarget.User);
+
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Configuration
