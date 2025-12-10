@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:uchat.Views.Controls"
+             x:Class="uchat.Views.Controls.UserAvatar"
+             x:DataType="controls:UserAvatar">
+    
+    <Border Width="{Binding AvatarSize, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}" 
+            Height="{Binding AvatarSize, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}" 
+            CornerRadius="{Binding AvatarCornerRadius, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}" 
+            Background="{Binding AvatarBackground, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}">
+        <TextBlock Text="{Binding Initial, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}"
+                   VerticalAlignment="Center" 
+                   HorizontalAlignment="Center" 
+                   Foreground="{Binding AvatarForeground, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}" 
+                   FontWeight="{Binding AvatarFontWeight, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}"
+                   FontSize="{Binding AvatarFontSize, RelativeSource={RelativeSource AncestorType=controls:UserAvatar}}"/>
+    </Border>
+</UserControl>

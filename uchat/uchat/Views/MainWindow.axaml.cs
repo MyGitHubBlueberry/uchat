@@ -1,7 +1,5 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Microsoft.Extensions.DependencyInjection;
-using SharedLibrary.Models;
 using uchat.Services;
 using uchat.ViewModels;
 
@@ -34,7 +32,8 @@ public partial class MainWindow : FocusDetachableUserControl
 
     private void ScrollToBottom()
     {
-        MessageScrollViewer?.ScrollToEnd();
+        var chatContent = this.FindControl<ChatContent>("ChatContent");
+        chatContent?.FindControl<ScrollViewer>("MessageScrollViewer")?.ScrollToEnd();
     }
     
     private async void OnProfileRequested(object? sender, System.EventArgs e)
@@ -53,21 +52,5 @@ public partial class MainWindow : FocusDetachableUserControl
         profileWindow.DataContext = profileViewModel;
 
         await profileWindow.ShowDialog(mainWindow);
-    }
-
-    private async void OnUserResultTapped(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Border border && border.DataContext is User user && DataContext is MainWindowViewModel viewModel)
-        {
-            await viewModel.SelectUserCommand.ExecuteAsync(user);
-        }
-    }
-
-    private async void OnChatTapped(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Border border && border.DataContext is ChatViewModel chatViewModel && DataContext is MainWindowViewModel viewModel)
-        {
-            await viewModel.SelectChatCommand.ExecuteAsync(chatViewModel);
-        }
     }
 }

@@ -1,0 +1,94 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:uchat.ViewModels"
+             xmlns:controls="using:uchat.Views.Controls"
+             x:Class="uchat.Views.ChatSidebar"
+             x:DataType="vm:MainWindowViewModel">
+    
+    <Border Margin="10 10 5 10" CornerRadius="25" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,1,0">
+        <Grid RowDefinitions="Auto, Auto, *">
+            <TextBlock Text="UCHAT" 
+                       Foreground="White" 
+                       FontWeight="Black" 
+                       FontSize="24" 
+                       Margin="20" 
+                       HorizontalAlignment="Center"
+                       LetterSpacing="2"/>
+            <Button Grid.Column="2"
+                    Command="{Binding OpenProfileCommand}"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="8"
+                    Cursor="Hand"
+                    Margin="8,8,0,8"
+                    CornerRadius="17.5"
+                    VerticalAlignment="Center">
+                <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
+                    <TextBlock Text="{Binding UserName[0]}"
+                               VerticalAlignment="Center" 
+                               HorizontalAlignment="Center" 
+                               Foreground="White" 
+                               FontWeight="Bold"
+                               FontSize="14"/>
+                </Border>
+            </Button>
+
+            <StackPanel Grid.Row="1" Margin="10">
+                <controls:UserSearchBox Watermark="Search users..."
+                                        BackgroundColor="#2C303E"
+                                        PaddingValue="12,10"
+                                        CornerRadiusValue="10"
+                                        SearchText="{Binding SearchText}"
+                                        SearchResults="{Binding SearchResults}"/>
+                
+                <ItemsControl ItemsSource="{Binding SearchResults}" 
+                              Margin="0,5,0,0"
+                              IsVisible="{Binding SearchResults.Count}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="10" 
+                                    Padding="10" 
+                                    Margin="0,2"
+                                    Cursor="Hand"
+                                    Tapped="OnUserResultTapped">
+                                <Border.Styles>
+                                    <Style Selector="Border">
+                                        <Setter Property="Background" Value="#17212b"/>
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="Border:pointerover">
+                                        <Setter Property="Background" Value="#2C303E"/>
+                                    </Style>
+                                </Border.Styles>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <controls:UserAvatar Initial="{Binding Name[0]}"
+                                                         AvatarSize="35"
+                                                         AvatarCornerRadius="17.5"
+                                                         AvatarFontSize="13"/>
+                                    <TextBlock Text="{Binding Name}" 
+                                               Foreground="White" 
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Chats}" Margin="10">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <controls:ChatListItem Tapped="OnChatTapped"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

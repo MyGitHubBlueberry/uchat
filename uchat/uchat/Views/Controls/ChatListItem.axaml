@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:uchat.ViewModels"
+             x:Class="uchat.Views.Controls.ChatListItem"
+             x:DataType="vm:ChatViewModel">
+    
+    <Border CornerRadius="20" 
+            Padding="10,10"
+            Margin="0,0,0,5"
+            Cursor="Hand">
+        <Border.Styles>
+            <Style Selector="Border[Tag=True]">
+                <Setter Property="Background" Value="#40444B"/>
+                <Setter Property="CornerRadius" Value="20"/>
+                <Setter Property="Padding" Value="10,10"/>
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                    </Transitions>
+                </Setter>
+            </Style>
+        </Border.Styles>
+        <Border Tag="{Binding IsSelected}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Width="40" Height="40" CornerRadius="20" Background="#5865F2">
+                    <TextBlock Text="{Binding DisplayInitial}" 
+                               VerticalAlignment="Center" 
+                               HorizontalAlignment="Center" 
+                               Foreground="White" 
+                               FontWeight="Bold"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding DisplayName}" 
+                               Foreground="White" 
+                               FontWeight="SemiBold"
+                               FontSize="14"/>
+                    <TextBlock Text="{Binding LastMessagePreview}" 
+                               Foreground="#8899A6" 
+                               FontSize="12"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="150"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>

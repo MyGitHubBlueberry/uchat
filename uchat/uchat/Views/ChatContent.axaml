@@ -1,0 +1,128 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:uchat.ViewModels"
+             xmlns:controls="using:uchat.Views.Controls"
+             x:Class="uchat.Views.ChatContent"
+             x:DataType="vm:MainWindowViewModel">
+    
+    <Grid RowDefinitions="60, *, Auto">
+        <Border CornerRadius="25" Padding="20 0" Margin="5, 10, 10, 10" Grid.Row="0" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto, *, Auto">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" Grid.Column="0">
+                    <TextBlock VerticalAlignment="Center" Text="#" Foreground="#8899A6" FontSize="20" FontWeight="Light"/>
+                    <TextBlock VerticalAlignment="Center" Text="{Binding SelectedChatName}" Foreground="White" FontWeight="Bold" FontSize="16"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" 
+                      Name="MessageScrollViewer"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Messages}" Margin="20">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <controls:MessageBubble/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="20,20,20,10" IsVisible="{Binding AttachedImages.Count}">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" 
+                          VerticalScrollBarVisibility="Disabled"
+                          MaxHeight="90"
+                          Background="#17212b"
+                          CornerRadius="8"
+                          HorizontalAlignment="Stretch">
+                <ItemsControl ItemsSource="{Binding AttachedImages}" HorizontalAlignment="Left">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="80" Height="80" CornerRadius="8" ClipToBounds="True" Background="#2C303E">
+                                <Grid>
+                                    <Image Source="{Binding .}" Stretch="UniformToFill"/>
+                                    <Button Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RemoveAttachmentCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Background="#40000000"
+                                            Width="20"
+                                            Height="20"
+                                            CornerRadius="10"
+                                            Padding="0"
+                                            Margin="4"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Cursor="Hand">
+                                        <TextBlock Text="×" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <Border Grid.Row="2" Padding="20,10">
+            <Grid RowDefinitions="Auto, Auto">
+                <Border Grid.Row="0" 
+                        Background="#2F3136" 
+                        CornerRadius="8" 
+                        Padding="12,8" 
+                        Margin="0,0,0,8"
+                        IsVisible="{Binding EditingMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <Grid ColumnDefinitions="*, Auto, Auto">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Editing message" 
+                                       Foreground="#B9BBBE" 
+                                       FontSize="11" 
+                                       FontWeight="SemiBold"/>
+                            <controls:StyledTextBox Watermark="Edit message..."
+                                                    BackgroundColor="#40444B"
+                                                    PaddingValue="12,8"
+                                                    Text="{Binding EditText}"
+                                                    EnterCommand="{Binding SaveEditCommand}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" 
+                                Content="Save" 
+                                Background="#2b5278" 
+                                Foreground="White"
+                                Padding="12,6"
+                                CornerRadius="4"
+                                Margin="8,0,4,0"
+                                Cursor="Hand"
+                                Command="{Binding SaveEditCommand}"/>
+                        <Button Grid.Column="2" 
+                                Content="Cancel" 
+                                Background="#40444B" 
+                                Foreground="#B9BBBE"
+                                Padding="12,6"
+                                CornerRadius="4"
+                                Cursor="Hand"
+                                Command="{Binding CancelEditCommand}"/>
+                    </Grid>
+                </Border>
+                
+                <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto">
+                    <Button Grid.Column="0" Width="45" Height="45" CornerRadius="25" Background="#40444B" Cursor="Hand" Command="{Binding AttachImagesCommand}" Margin="0,0,10,0">
+                        <TextBlock Text="📎" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    </Button>
+                    <controls:StyledTextBox Grid.Column="1"
+                                            Watermark="Type message..."
+                                            BackgroundColor="#40444B"
+                                            PaddingValue="16,12"
+                                            VerticalAlignment="Center"
+                                            Text="{Binding MessageText}"
+                                            EnterCommand="{Binding SendCommand}"/>
+                    <Button Grid.Column="2" Width="45" Height="45" CornerRadius="25" Background="#2b5278" Margin="10,0,0,0" Cursor="Hand" Command="{Binding SendCommand}">
+                        <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
