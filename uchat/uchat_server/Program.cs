@@ -4,12 +4,18 @@ using uchat_server.Hubs;
 using uchat_server.Args;
 using Scalar.AspNetCore;
 using uchat_server.Services;
+using System.Diagnostics;
 
 class Program {
     static void Main(string[] args) {
         int port;
+        bool isDeamon;
 
-        if (!Parser.Parse(args, out port)) return;
+        if (!Parser.Parse(args, out port, out isDeamon)) return;
+        if (isDeamon) {
+            RunAsDeamon(args);
+            return;
+        }
 
         Environment.SetEnvironmentVariable("UCHAT_SERVER_PORT", port.ToString(), EnvironmentVariableTarget.User);
 
@@ -65,5 +71,30 @@ class Program {
         Console.WriteLine($"http://localhost:{port}/scalar/v1");
 
         app.Run($"http://localhost:{port}");
+    }
+    
+    static void RunAsDeamon(string[] args) {
+            var newArgs = args.Where(x => x != "-d" && x != "--daemon");
+            
+            var psi = new ProcessStartInfo
+            {
+                FileName = Environment.ProcessPath,
+                Arguments = string.Join(" ", newArgs),
+                UseShellExecute = true, //todo try false
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+        var p = Process.Start(psi);
+        if (p is null) {
+            Console.WriteLine("Failed to start server as daemon");
+            return;
+        }
+
+        Console.BackgroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Server process id is: {p.Id}");
+        Console.BackgroundColor = ConsoleColor.White;
+
+        return;
     }
 }
