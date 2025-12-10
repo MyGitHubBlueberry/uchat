@@ -43,7 +43,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         try {
             await messageService.ChangeMessageTextAsync(messageId, text);
         } catch (InvalidDataException ex) {
-            return NotFound(ex);
+            return NotFound(ex.Message);
         }
         return Ok(new { Status = "Changed" });
     }
@@ -53,7 +53,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         try {
             await messageService.AddAttachmentsAsync(messageId, files);
         } catch (InvalidDataException ex) {
-            return NotFound(ex);
+            return NotFound(ex.Message);
         }
         return Ok(new { Status = "Added" });
     }
@@ -66,7 +66,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
                     ? "Removed" : "Nothing to remove"
                 });
         } catch (InvalidDataException ex) {
-            return NotFound(ex);
+            return NotFound(ex.Message);
         }
     }
 }
