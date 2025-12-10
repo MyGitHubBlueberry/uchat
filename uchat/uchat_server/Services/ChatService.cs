@@ -288,7 +288,7 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
     {
         if (chat.ImageUrl is not null)
             await RemoveGroupChatAvatarAsync(chat);
-        chat.ImageUrl = await FileManager.Save(file, Path.Combine("GroupChat", "Avatars"));
+        chat.ImageUrl = await FileManager.SaveAvatar(file, Path.Combine("GroupChat", "Avatars"));
         await context.SaveChangesAsync();
     }
 
