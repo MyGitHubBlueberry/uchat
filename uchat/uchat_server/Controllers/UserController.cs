@@ -22,8 +22,8 @@ public class UserController(IUserService userService) : ControllerBase
         }
     }
 
-    [HttpGet("login")]
-    public async Task<IActionResult> Login([FromQuery] LoginRequest request)
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         try
         {

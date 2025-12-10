@@ -37,7 +37,7 @@ public class ServerClient : IServerClient
 
     public async Task<User> UserLogin(string username, string password)
     {
-        var response = await _httpClient.GetAsync($"/api/user/login?username={Uri.EscapeDataString(username)}&password={Uri.EscapeDataString(password)}");
+        var response = await _httpClient.PostAsJsonAsync($"/api/user/login", new {username, password});
 
         if (!response.IsSuccessStatusCode)
         {
