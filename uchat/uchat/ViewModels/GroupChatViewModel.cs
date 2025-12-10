@@ -3,26 +3,24 @@ using SharedLibrary.Models;
 
 namespace uchat.ViewModels;
 
-public partial class ChatViewModel(Chat chat, int currentUserId) : ObservableObject, IChatItemViewModel
+public partial class GroupChatViewModel(GroupChat groupChat, int currentUserId) : ObservableObject, IChatItemViewModel
 {
-    private readonly Chat _chat = chat;
+    private readonly GroupChat _groupChat = groupChat;
     private readonly int _currentUserId = currentUserId;
 
-    public Chat Chat => _chat;
+    public GroupChat GroupChat => _groupChat;
     
-    public int ChatId => _chat.id;
+    public int ChatId => _groupChat.id;
     
-    public bool IsGroupChat => false;
+    public bool IsGroupChat => true;
 
-    public string DisplayName => _chat.userFrom.Id == _currentUserId 
-        ? _chat.userTo.Name 
-        : _chat.userFrom.Name;
+    public string DisplayName => _groupChat.name;
 
     public string DisplayInitial => DisplayName.Length > 0 
         ? DisplayName[0].ToString() 
-        : "?";
+        : "#";
 
-    [ObservableProperty] private string _lastMessagePreview = chat.lastMessagePreview ?? "No messages yet";
+    [ObservableProperty] private string _lastMessagePreview = "No messages yet";
 
     [ObservableProperty] private bool _isSelected;
 

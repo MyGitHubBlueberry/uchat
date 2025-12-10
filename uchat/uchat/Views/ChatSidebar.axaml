@@ -7,31 +7,61 @@
     
     <Border Margin="10 10 5 10" CornerRadius="25" Background="#17212b" BorderBrush="#202225" BorderThickness="0,0,1,0">
         <Grid RowDefinitions="Auto, Auto, *">
-            <TextBlock Text="UCHAT" 
-                       Foreground="White" 
-                       FontWeight="Black" 
-                       FontSize="24" 
-                       Margin="20" 
-                       HorizontalAlignment="Center"
-                       LetterSpacing="2"/>
-            <Button Grid.Column="2"
-                    Command="{Binding OpenProfileCommand}"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Padding="8"
-                    Cursor="Hand"
-                    Margin="8,8,0,8"
-                    CornerRadius="17.5"
-                    VerticalAlignment="Center">
-                <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
-                    <TextBlock Text="{Binding UserName[0]}"
-                               VerticalAlignment="Center" 
-                               HorizontalAlignment="Center" 
-                               Foreground="White" 
-                               FontWeight="Bold"
-                               FontSize="14"/>
-                </Border>
-            </Button>
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="20">
+                <TextBlock Grid.Column="1"
+                           Text="UCHAT" 
+                           Foreground="White" 
+                           FontWeight="Black" 
+                           FontSize="24" 
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           LetterSpacing="2"/>
+                
+                <Button Grid.Column="2"
+                        Command="{Binding OpenCreateGroupCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Cursor="Hand"
+                        Margin="10,0,10,0"
+                        CornerRadius="15"
+                        Width="30"
+                        Height="30"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Create Group">
+                    <TextBlock Text="+" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover">
+                            <Setter Property="Background" Value="#40444B"/>
+                        </Style>
+                    </Button.Styles>
+                </Button>
+                
+                <Button Grid.Column="3"
+                        Command="{Binding OpenProfileCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Cursor="Hand"
+                        CornerRadius="17.5"
+                        Width="35"
+                        Height="35"
+                        VerticalAlignment="Center">
+                    <Border Width="35" Height="35" CornerRadius="17.5" Background="#5865F2">
+                        <TextBlock Text="{Binding UserName[0]}"
+                                   VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center" 
+                                   Foreground="White" 
+                                   FontWeight="Bold"
+                                   FontSize="14"/>
+                    </Border>
+                </Button>
+            </Grid>
 
             <StackPanel Grid.Row="1" Margin="10">
                 <controls:UserSearchBox Watermark="Search users..."

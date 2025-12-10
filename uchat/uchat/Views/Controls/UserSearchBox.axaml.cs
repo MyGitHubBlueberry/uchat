@@ -38,8 +38,6 @@ public partial class UserSearchBox : StyledInputBase
         set => SetValue(SearchResultsProperty, value);
     }
 
-    public event EventHandler<User>? UserSelected;
-
     private DispatcherTimer? _debounceTimer;
 
     public UserSearchBox()

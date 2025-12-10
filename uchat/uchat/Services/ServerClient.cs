@@ -222,11 +222,11 @@ public class ServerClient : IServerClient
         throw new NotImplementedException();
     }
 
-    public async Task<Chat[]> GetChats()
+    public async Task<(Chat[], GroupChat[])> GetChats()
     {
         if (!_currentUserId.HasValue)
         {
-            return [];
+            return ([], []);
         }
 
         var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat/{_currentUserId.Value}/chats");
@@ -235,7 +235,7 @@ public class ServerClient : IServerClient
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"GetChats failed: {response.StatusCode} - {errorContent}");
-            return [];
+            return ([], []);
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
@@ -245,21 +245,28 @@ public class ServerClient : IServerClient
         
         if (jsonDoc == null)
         {
-            return [];
-        }
-
-        if (!jsonDoc.RootElement.TryGetProperty("chats", out var chatsElement))
-        {
-            Console.WriteLine("Response does not contain 'chats' property");
-            return [];
+            return ([], []);
         }
 
         var options = new System.Text.Json.JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         };
-        var chats = System.Text.Json.JsonSerializer.Deserialize<Chat[]>(chatsElement.GetRawText(), options);
-        return chats ?? [];
+        
+        Chat[] chats = [];
+        GroupChat[] groupChats = [];
+        
+        if (jsonDoc.RootElement.TryGetProperty("chats", out var chatsElement))
+        {
+            chats = System.Text.Json.JsonSerializer.Deserialize<Chat[]>(chatsElement.GetRawText(), options) ?? [];
+        }
+        
+        if (jsonDoc.RootElement.TryGetProperty("groupChats", out var groupChatsElement))
+        {
+            groupChats = System.Text.Json.JsonSerializer.Deserialize<GroupChat[]>(groupChatsElement.GetRawText(), options) ?? [];
+        }
+        
+        return (chats, groupChats);
     }
 
     public async Task<int> CreateChat(int sourceUserId, int targetUserId)
@@ -270,6 +277,29 @@ public class ServerClient : IServerClient
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             throw new Exception($"Error creating chat: {response.StatusCode} - {errorContent}");
+        }
+
+        var chatId = await response.Content.ReadFromJsonAsync<int>();
+        return chatId;
+    }
+
+    public async Task<int> CreateGroupChat(string name, int ownerId, List<int> participantIds, string? description = null)
+    {
+        var request = new {
+            name,
+            ownerId,
+            participants = participantIds,
+            muted = false,
+            picture = (string?)null,
+            description
+        };
+
+        var response = await _httpClient.PostAsJsonAsync($"{_serverUrl}/api/chat/create/groupChat", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error creating group chat: {response.StatusCode} - {errorContent}");
         }
 
         var chatId = await response.Content.ReadFromJsonAsync<int>();

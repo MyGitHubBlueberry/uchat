@@ -23,9 +23,9 @@ public interface IServerClient
     Task DeleteMessage(int messageId);
     Task<List<Message>> GetMessages(int chatId, int pageNumber = 1, int pageSize = 50);
     Task<User> GetUserInfo(int chatId, int messageId);
-    Task<Chat[]> GetChats();
-    //void RegisterNotificationCallback(Action<Message> msg);
+    Task<(Chat[], GroupChat[])> GetChats();
     Task<int> CreateChat(int sourceUserId, int targetUserId);
+    Task<int> CreateGroupChat(string name, int ownerId, List<int> participantIds, string? description = null);
     Task JoinChatGroup(int chatId, List<int> memberIds);
     Task LeaveChatGroup(int chatId);
     Task UploadProfilePicture(int userId, string filePath);

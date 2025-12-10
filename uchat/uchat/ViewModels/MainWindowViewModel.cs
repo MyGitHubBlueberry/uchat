@@ -20,13 +20,14 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IUserSession _userSession;
     
     public ICommand OpenProfileCommand { get; }
+    public ICommand OpenCreateGroupCommand { get; }
     
-    public ObservableCollection<ChatViewModel> Chats { get; } = new();
+    public ObservableCollection<IChatItemViewModel> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
     public ObservableCollection<User> SearchResults { get; } = new();
     public ObservableCollection<string> AttachedImages { get; } = new();
     
-    [ObservableProperty] private ChatViewModel? _selectedChat;
+    [ObservableProperty] private IChatItemViewModel? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
     [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private bool _shouldScrollToBottom;
@@ -53,6 +54,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _serverClient.OnReconnected += OnReconnected;
 
         OpenProfileCommand = new RelayCommand(OpenProfile);
+        OpenCreateGroupCommand = new RelayCommand(OpenCreateGroup);
 
         _ = InitializeAsync();
     }
@@ -63,7 +65,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private const int PageSize = 50;
     private int? _currentChatId;
 
-    partial void OnSelectedChatChanged(ChatViewModel? oldValue, ChatViewModel? newValue)
+    partial void OnSelectedChatChanged(IChatItemViewModel? oldValue, IChatItemViewModel? newValue)
     {
         if (oldValue != null)
         {
@@ -122,29 +124,29 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if ((string.IsNullOrWhiteSpace(MessageText) && AttachedImages.Count == 0) || SelectedChat == null) return;
 
-        var chatId = SelectedChat.Chat.id;
+        var chatId = SelectedChat.ChatId;
 
-        if (chatId == -1)
+        if (chatId == -1 && SelectedChat is ChatViewModel chatViewModel)
         {
             try
             {
-                chatId = await _serverClient.CreateChat(_userSession.CurrentUser!.Id, SelectedChat.Chat.userTo.Id);
+                chatId = await _serverClient.CreateChat(_userSession.CurrentUser!.Id, chatViewModel.Chat.userTo.Id);
             }
             catch (Exception ex) when (ex.Message.Contains("Chat already exists"))
             {
                 await LoadChats();
                 
-                var existingChat = Chats.FirstOrDefault(c => 
-                    (c.Chat.userFrom.Id == _userSession.CurrentUser?.Id && c.Chat.userTo.Id == SelectedChat.Chat.userTo.Id) ||
-                    (c.Chat.userTo.Id == _userSession.CurrentUser?.Id && c.Chat.userFrom.Id == SelectedChat.Chat.userTo.Id));
+                var existingChat = Chats.OfType<ChatViewModel>().FirstOrDefault(c => 
+                    (c.Chat.userFrom.Id == _userSession.CurrentUser?.Id && c.Chat.userTo.Id == chatViewModel.Chat.userTo.Id) ||
+                    (c.Chat.userTo.Id == _userSession.CurrentUser?.Id && c.Chat.userFrom.Id == chatViewModel.Chat.userTo.Id));
 
                 if (existingChat != null)
                 {
                     RemoveLocalChats();
                     SelectedChat = existingChat;
-                    chatId = existingChat.Chat.id;
+                    chatId = existingChat.ChatId;
                     
-                    var memberIds = new List<int> { SelectedChat.Chat.userFrom.Id, SelectedChat.Chat.userTo.Id };
+                    var memberIds = new List<int> { existingChat.Chat.userFrom.Id, existingChat.Chat.userTo.Id };
                     await _serverClient.JoinChatGroup(chatId, memberIds);
                     _currentChatId = chatId;
                 }
@@ -154,12 +156,12 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
             }
             
-            if (chatId != SelectedChat.Chat.id)
+            if (chatId != SelectedChat.ChatId)
             {
                 var realChat = new Chat(
                     id: chatId,
-                    userFrom: SelectedChat.Chat.userFrom,
-                    userTo: SelectedChat.Chat.userTo,
+                    userFrom: chatViewModel.Chat.userFrom,
+                    userTo: chatViewModel.Chat.userTo,
                     muted: false,
                     blocked: false
                 );
@@ -170,7 +172,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 Chats.Insert(index, newChatViewModel);
                 SelectedChat = newChatViewModel;
 
-                var memberIds = new List<int> { SelectedChat.Chat.userFrom.Id, SelectedChat.Chat.userTo.Id };
+                var memberIds = new List<int> { newChatViewModel.Chat.userFrom.Id, newChatViewModel.Chat.userTo.Id };
                 await _serverClient.JoinChatGroup(chatId, memberIds);
                 _currentChatId = chatId;
             }
@@ -235,11 +237,16 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Chats.Clear();
         
-        var chats = await _serverClient.GetChats();
+        var (chats, groupChats) = await _serverClient.GetChats();
         
         foreach (var chat in chats)
         {
             Chats.Add(new ChatViewModel(chat, _userSession.CurrentUser!.Id));
+        }
+        
+        foreach (var groupChat in groupChats)
+        {
+            Chats.Add(new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id));
         }
     }
     
@@ -251,7 +258,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _currentPage = 1;
 
-        var history = await _serverClient.GetMessages(SelectedChat.Chat.id, _currentPage, PageSize);
+        var history = await _serverClient.GetMessages(SelectedChat.ChatId, _currentPage, PageSize);
 
         foreach (var msg in history)
         {
@@ -268,7 +275,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _currentPage++;
 
-        var older = await _serverClient.GetMessages(SelectedChat.Chat.id, _currentPage, PageSize);
+        var older = await _serverClient.GetMessages(SelectedChat.ChatId, _currentPage, PageSize);
 
         for (int i = older.Count - 1; i >= 0; i--)
         {
@@ -280,20 +287,20 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            var chatViewModel = Chats.FirstOrDefault(c => c.Chat.id == msg.ChatId);
+            var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == msg.ChatId);
             
             if (chatViewModel != null)
             {
                 chatViewModel.UpdateLastMessage(msg.Content);
             }
         
-            if (SelectedChat != null && msg.ChatId == SelectedChat.Chat.id)
+            if (SelectedChat != null && msg.ChatId == SelectedChat.ChatId)
             {
                 Messages.Add(CreateMessageViewModel(msg));
             }
             else
             {
-                Console.WriteLine($"Received message for chat {msg.ChatId}, but current chat is {SelectedChat?.Chat.id}");
+                Console.WriteLine($"Received message for chat {msg.ChatId}, but current chat is {SelectedChat?.ChatId}");
             }
         });
     }
@@ -302,7 +309,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            if (!Chats.Any(c => c.Chat.id == chat.id))
+            if (!Chats.Any(c => c.ChatId == chat.id))
             {
                 Chats.Add(new ChatViewModel(chat, _userSession.CurrentUser!.Id));
             }
@@ -313,7 +320,10 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            Console.WriteLine($"Received new group chat: {groupChat.name} (ID: {groupChat.id})");
+            if (!Chats.Any(c => c.ChatId == groupChat.id))
+            {
+                Chats.Add(new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id));
+            }
         });
     }
 
@@ -328,11 +338,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 Messages[index] = CreateMessageViewModel(msg);
             }
             
-            // Update chat preview if the old preview matches the edited message content
-            var chatViewModel = Chats.FirstOrDefault(c => c.Chat.id == msg.ChatId);
+            var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == msg.ChatId);
             if (chatViewModel != null)
             {
-                // Check if current preview starts with the old message content (accounting for truncation)
                 var oldContent = messageViewModel?.Content ?? "";
                 var oldPreview = oldContent.Length > 50 ? oldContent[..50] + "..." : oldContent;
                 
@@ -358,7 +366,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 Messages.Remove(messageViewModel);
                 
                 // Update chat preview if the deleted message preview matches current preview
-                var chatViewModel = Chats.FirstOrDefault(c => c.Chat.id == chatId);
+                var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == chatId);
                 if (chatViewModel != null && chatViewModel.LastMessagePreview == deletedPreview)
                 {
                     var newLastMessage = Messages
@@ -455,6 +463,24 @@ public partial class MainWindowViewModel : ViewModelBase
         ProfileRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private async void OpenCreateGroup()
+    {
+        var chatsOnly = Chats.OfType<ChatViewModel>().Select(c => c.Chat).ToArray();
+        var createGroupViewModel = new CreateGroupViewModel(_serverClient, _userSession.CurrentUser!.Id, chatsOnly);
+        var createGroupWindow = new Views.CreateGroupWindow
+        {
+            DataContext = createGroupViewModel
+        };
+        
+        var topLevel = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = topLevel?.MainWindow;
+        
+        if (mainWindow != null)
+        {
+            await createGroupWindow.ShowDialog(mainWindow);
+        }
+    }
+
     [RelayCommand]
     private async Task SearchUsers(string partialName)
     {
@@ -477,9 +503,9 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task SelectUser(User user)
+    private void SelectUser(User user)
     {
-        var existingChat = Chats.FirstOrDefault(c => 
+        var existingChat = Chats.OfType<ChatViewModel>().FirstOrDefault(c => 
             (c.Chat.userFrom.Id == _userSession.CurrentUser?.Id && c.Chat.userTo.Id == user.Id) ||
             (c.Chat.userTo.Id == _userSession.CurrentUser?.Id && c.Chat.userFrom.Id == user.Id));
 
@@ -510,7 +536,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task SelectChat(ChatViewModel chatViewModel)
+    private async Task SelectChat(IChatItemViewModel chatViewModel)
     {
         if (_currentChatId.HasValue)
         {
@@ -518,7 +544,7 @@ public partial class MainWindowViewModel : ViewModelBase
             _currentChatId = null;
         }
 
-        if (chatViewModel.Chat.id == -1)
+        if (chatViewModel.ChatId == -1)
         {
             SelectedChat = chatViewModel;
             Messages.Clear();
@@ -529,9 +555,22 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedChat = chatViewModel;
             await GetChatHistory();
             
-            var memberIds = new List<int> { chatViewModel.Chat.userFrom.Id, chatViewModel.Chat.userTo.Id };
-            await _serverClient.JoinChatGroup(chatViewModel.Chat.id, memberIds);
-            _currentChatId = chatViewModel.Chat.id;
+            List<int> memberIds;
+            if (chatViewModel is ChatViewModel chat)
+            {
+                memberIds = new List<int> { chat.Chat.userFrom.Id, chat.Chat.userTo.Id };
+            }
+            else if (chatViewModel is GroupChatViewModel groupChat)
+            {
+                memberIds = groupChat.GroupChat.participants.Select(p => p.Id).ToList();
+            }
+            else
+            {
+                return;
+            }
+            
+            await _serverClient.JoinChatGroup(chatViewModel.ChatId, memberIds);
+            _currentChatId = chatViewModel.ChatId;
         }
     }
 
@@ -539,7 +578,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         for (int i = Chats.Count - 1; i >= 0; i--)
         {
-            if (Chats[i].Chat.id == -1)
+            if (Chats[i].ChatId == -1)
             {
                 Chats.RemoveAt(i);
             }
