@@ -219,5 +219,41 @@ namespace uchat_server.Services
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }
+
+        public async Task BlockUserAsync(int userId, int targetUserId)
+        {
+            if (userId == targetUserId) throw new InvalidOperationException("You cannot block yourself.");
+
+            var relation = await context.UserRelations
+                .FirstOrDefaultAsync(r => r.SourceUserId == userId && r.TargetUserId == targetUserId);
+
+            if (relation == null)
+            {
+                relation = new DbUserRelation
+                {
+                    SourceUserId = userId,
+                    TargetUserId = targetUserId,
+                    IsBlocked = true,
+                    IsFriend = false
+                };
+                context.UserRelations.Add(relation);
+            }
+            else
+            {
+                relation.IsBlocked = true;
+                relation.IsFriend = false;
+            }
+
+            // Remove the Reverse friendship too (Target -> Source)
+            var reverseRelation = await context.UserRelations
+                 .FirstOrDefaultAsync(r => r.SourceUserId == targetUserId && r.TargetUserId == userId);
+            
+            if (reverseRelation != null)
+            {
+                reverseRelation.IsFriend = false;
+            }
+
+            await context.SaveChangesAsync();
+        }
     }
 }

@@ -14,5 +14,6 @@ namespace uchat_server.Services
         Task<bool> RemoveProfilePicture(int userId);
         Task UpdatePasswordAsync(int userId, UpdatePasswordRequest request);
         Task DeleteUserAsync(int userId);
+        Task BlockUserAsync(int userId, int targetUserId);
     }
 }

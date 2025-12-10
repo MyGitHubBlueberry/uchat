@@ -126,4 +126,13 @@ public class UserController(IUserService userService) : ControllerBase
             return BadRequest(new { Error = ex.Message });
         }
     }
+
+    [HttpPost("{userId}/block/{targetId}")]
+    public async Task<IActionResult> BlockUser(int userId, int targetId)
+    {
+        try {
+            await userService.BlockUserAsync(userId, targetId);
+            return Ok(new { Message = "User blocked" });
+        } catch (Exception ex) { return BadRequest(ex.Message); }
+    }
 }
