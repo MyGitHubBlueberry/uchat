@@ -37,4 +37,37 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
     {
         return await messageService.GetChatMessagesDtoAsync(chatId, pageNumber, pageSize);
     }
+
+    [HttpPatch("text/{messageId}")]
+    public async Task<IActionResult> ChangeMessageText(int messageId, string text) {
+        try {
+            await messageService.ChangeMessageTextAsync(messageId, text);
+        } catch (InvalidDataException ex) {
+            return NotFound(ex);
+        }
+        return Ok(new { Status = "Changed" });
+    }
+
+    [HttpPost("attachment/{messageId}")]
+    public async Task<IActionResult> AddAttachments(int messageId, [FromForm] params IFormFile[] files) {
+        try {
+            await messageService.AddAttachmentsAsync(messageId, files);
+        } catch (InvalidDataException ex) {
+            return NotFound(ex);
+        }
+        return Ok(new { Status = "Added" });
+    }
+
+    [HttpDelete("attachment/{messageId}")]
+    public async Task<IActionResult> RemoveAttachments(int messageId, [FromQuery] params int[]? idxes) {
+        try {
+            return Ok(new { Status = await messageService
+                    .RemoveAttachmentsAsync(messageId, idxes)
+                    ? "Removed" : "Nothing to remove"
+                });
+        } catch (InvalidDataException ex) {
+            return NotFound(ex);
+        }
+    }
 }
+
