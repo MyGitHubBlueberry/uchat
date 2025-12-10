@@ -10,7 +10,6 @@ namespace uchat_server.Services
     public class UserService : IUserService
     {
         private readonly AppDbContext context;
-        private readonly IServiceProvider serviceProvider;
 
         public UserService(AppDbContext context)
         {
@@ -101,6 +100,21 @@ namespace uchat_server.Services
                 Name = dbUser.Name,
                 Image = dbUser.ImageUrl
             };
+        }
+
+        public async Task<List<SharedLibrary.Models.User>> GetUsersByIdsAsync(IEnumerable<int> userIds)
+        {
+            var userIdsList = userIds.ToList();
+            var dbUsers = await context.Users
+                .Where(u => userIdsList.Contains(u.Id))
+                .ToListAsync();
+
+            return dbUsers.Select(dbUser => new SharedLibrary.Models.User
+            {
+                Id = dbUser.Id,
+                Name = dbUser.Name,
+                Image = dbUser.ImageUrl
+            }).ToList();
         }
 
         public async Task<List<SharedLibrary.Models.User>> GetUserByNameAsync(string partialName)

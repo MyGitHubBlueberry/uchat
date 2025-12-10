@@ -38,12 +38,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         {
             var newChatId = await chatService.CreateGroupChatAsync(chat);
             
-            var members = await chatService.GetChatMembersAsync(newChatId);
-            // TODO: This code exhibits an N+1 query pattern where GetGroupChatByIdAsync is called once per member in a loop. Consider modifying the service to retrieve all member-specific group chat data in a single query, or if the data is identical for all members, fetch it once before the loop.
-            foreach (var member in members)
+            var groupChatsForMembers = await chatService.GetGroupChatForAllMembersAsync(newChatId);
+            
+            foreach (var kvp in groupChatsForMembers)
             {
-                var groupChat = await chatService.GetGroupChatByIdAsync(newChatId, member.UserId);
-                await hubContext.Clients.Group($"user_{member.UserId}").SendAsync("NewGroupChat", groupChat);
+                await hubContext.Clients.Group($"user_{kvp.Key}").SendAsync("NewGroupChat", kvp.Value);
             }
             
             return Ok(newChatId);

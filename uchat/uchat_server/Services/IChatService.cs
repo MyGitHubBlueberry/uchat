@@ -9,6 +9,7 @@ namespace uchat_server.Services
         Task<int> CreateGroupChatAsync(GroupChatCreateRequest groupChat);
         Task<Chat> GetChatByIdAsync(int chatId, int userId);
         Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId);
+        Task<Dictionary<int, GroupChat>> GetGroupChatForAllMembersAsync(int chatId);
         Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId);
         Task<bool> DeleteChatAsync(int chatId);
         Task AddChatMemberAsync(int chatId, int userId);

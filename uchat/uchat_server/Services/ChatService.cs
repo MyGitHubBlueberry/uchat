@@ -149,6 +149,21 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         return new Chat(dbChat.Id, source, target, member.IsMuted, member.IsBlocked, lastMessagePreview);
     }
 
+    private async Task<(List<User> users, User owner)> GetGroupChatUsersAsync(DbChat dbChat)
+    {
+        var memberIds = dbChat.Members
+            .Select(m => m.UserId)
+            .Append(dbChat.OwnerId!.Value)
+            .Distinct()
+            .ToList();
+        
+        var users = await userService.GetUsersByIdsAsync(memberIds);
+        var owner = users.FirstOrDefault(user => user.Id == dbChat.OwnerId.Value)
+            ?? throw new InvalidDataException("Owner not found in members");
+        
+        return (users, owner);
+    }
+
     public async Task<GroupChat> GetGroupChatByIdAsync(int chatId, int userId)
     {
         DbChat dbChat = await context
@@ -162,20 +177,48 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         if (dbChat.OwnerId == null)
             throw new InvalidOperationException("This is not a group chat");
 
-        User owner = await userService.GetUserByIdAsync(dbChat.OwnerId.Value);
+        var (users, owner) = await GetGroupChatUsersAsync(dbChat);
 
-        var partispants = await Task.WhenAll(
-                dbChat.Members.Select(async m => await userService.GetUserByIdAsync(m.UserId)
-                    ));
         return new GroupChat(
                 dbChat.Id,
                 owner,
                 dbChat.Title,
                 member.IsMuted,
-                partispants.ToList(),
+                users,
                 dbChat.ImageUrl,
                 dbChat.Description
                 );
+    }
+
+    public async Task<Dictionary<int, GroupChat>> GetGroupChatForAllMembersAsync(int chatId)
+    {
+        DbChat dbChat = await context
+            .Chats
+            .Include(c => c.Members)
+            .Where(chat => chat.Id == chatId)
+            .FirstOrDefaultAsync()
+            ?? throw new InvalidDataException("Chat not found");
+
+        if (dbChat.OwnerId == null)
+            throw new InvalidOperationException("This is not a group chat");
+
+        var (users, owner) = await GetGroupChatUsersAsync(dbChat);
+
+        var result = new Dictionary<int, GroupChat>();
+        foreach (var member in dbChat.Members)
+        {
+            result[member.UserId] = new GroupChat(
+                dbChat.Id,
+                owner,
+                dbChat.Title,
+                member.IsMuted,
+                users,
+                dbChat.ImageUrl,
+                dbChat.Description
+            );
+        }
+
+        return result;
     }
 
     public async Task<(List<Chat>, List<GroupChat>)> GetUserChatsAsync(int userId)
