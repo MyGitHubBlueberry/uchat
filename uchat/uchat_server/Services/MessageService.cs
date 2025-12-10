@@ -9,7 +9,6 @@ namespace uchat_server.Services
 {
     public class MessageService(AppDbContext db, IConfiguration configuration) : IMessageService
     {
-
         private readonly byte[] _masterKey = Convert.FromBase64String(configuration["MasterKey"]
                                              ?? throw new Exception("MasterKey is missing in config")
         );
@@ -73,7 +72,7 @@ namespace uchat_server.Services
             DbChat? dbChat = await db.Chats.FindAsync(msg.ChatId);
             if (dbChat is null)
             {
-                throw new Exception("Can't send message in chat, that doesn't exist.");
+                throw new Exception($"Can't send message in chat with id '{msg.ChatId}', that doesn't exist.");
             }
 
             DbUser user = await db.Users
@@ -148,7 +147,7 @@ namespace uchat_server.Services
             return encryptedMessage.Decrypt(_masterKey);
         }
 
-        public async Task EditMessage(int messageId, string text)
+        public async Task ChangeMessageTextAsync(int messageId, string text)
         {
             var message = await db.Messages.FindAsync(messageId)
                 ?? throw new InvalidDataException("Message not found");
@@ -159,33 +158,37 @@ namespace uchat_server.Services
             await db.SaveChangesAsync();
         }
         
-        public async Task RemoveAttachments(int messageId, params int[] idxes)
+        public async Task<bool> RemoveAttachmentsAsync(int messageId, params int[]? idxes)
         {
-            DbMessage message = await db.Messages.FindAsync(messageId)
-                ?? throw new InvalidDataException("Message not found");
-            if (message.Attachments is null)
-                return;
+            List<DbAttachment> attachments = await db.Attachments
+                .Where(a => a.MessageId == messageId)
+                .OrderBy(a => a.Id)
+                .ToListAsync();
+            if (attachments.Count == 0)
+                return false;
             if (idxes is null || idxes.Length == 0)
             {
-                var urls = message.Attachments.Select(a => a.Url);
-                message.Attachments.Clear();
+                var urls = attachments.Select(a => a.Url);
                 foreach (var url in urls)
                     FileManager.Delete(_attachmentFolder, url);
             }
             else
             {
-                var attachments = idxes
-                    .Select(idx => message.Attachments.ElementAtOrDefault(idx))
-                    .OfType<DbAttachment>();
-                if (attachments is null)
-                    return;
+                attachments = idxes
+                    .Select(idx => attachments.ElementAtOrDefault(idx))
+                    .OfType<DbAttachment>()
+                    .ToList();
+                if (attachments.Count == 0)
+                    return false;
                 foreach (DbAttachment attachment in attachments)
                     FileManager.Delete(_attachmentFolder, attachment.Url);
             }
+            db.Attachments.RemoveRange(attachments);
             await db.SaveChangesAsync();
+            return true;
         }
 
-        private async Task AddAttachments(int messageId, params IFormFile[] files)
+        public async Task AddAttachmentsAsync(int messageId, params IFormFile[] files)
         {
             var message = await db.Messages.FindAsync(messageId)
                 ?? throw new InvalidDataException("Message not found");
@@ -204,6 +207,7 @@ namespace uchat_server.Services
                             Message = message,
                             Url = url
                         }));
+            await db.SaveChangesAsync();
         }
     }
 }
