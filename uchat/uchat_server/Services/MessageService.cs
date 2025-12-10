@@ -267,5 +267,29 @@ namespace uchat_server.Services
             
             return chatId;
         }
+
+        public async Task DeleteAllMessagesInChatAsync(int chatId)
+        {
+            var messages = await db.Messages
+                .Where(m => m.ChatId == chatId)
+                .Include(m => m.Attachments)
+                .ToListAsync();
+
+            if (messages.Count == 0) return;
+
+            foreach (var msg in messages)
+            {
+                if (msg.Attachments != null && msg.Attachments.Count > 0)
+                {
+                    foreach (var attachment in msg.Attachments)
+                    {
+                        FileManager.Delete(_attachmentFolder, attachment.Url);
+                    }
+                }
+            }
+
+            db.Messages.RemoveRange(messages);
+            await db.SaveChangesAsync();
+        }
     }
 }

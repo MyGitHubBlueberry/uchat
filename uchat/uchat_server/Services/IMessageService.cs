@@ -13,5 +13,6 @@ namespace uchat_server.Services
         Task AddAttachmentsAsync(int messageId, params IFormFile[] files);
         Task<Message> EditMessageAsync(int messageId, string newContent);
         Task<int> DeleteMessageAsync(int messageId);
+        Task DeleteAllMessagesInChatAsync(int chatId);
     }
 }
