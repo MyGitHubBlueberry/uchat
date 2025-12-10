@@ -148,21 +148,16 @@ namespace uchat_server.Services
             return encryptedMessage.Decrypt(_masterKey);
         }
 
-        // public async Task EditMessage(int messageId, EditMode mode, params IFormFile[] files)
-        // {
-        //     var message = await db.Messages.FindAsync(messageId)
-        //         ?? throw new InvalidDataException("Message not found");
-        //     if (files == null || files.Length == 0)
-        //         return;
-        //     switch (mode)
-        //     {
-        //         case EditMode.Add:
-        //             await AddAttachments(message, files);
-        //             break;
-        //         case EditMode.Change:
-        //             break;
-        //     }
-        // }
+        public async Task EditMessage(int messageId, string text)
+        {
+            var message = await db.Messages.FindAsync(messageId)
+                ?? throw new InvalidDataException("Message not found");
+            message.TimeEdited = DateTime.UtcNow;
+            (byte[] encipted, byte[] iv) = text.Encrypt(_masterKey);
+            message.Iv = iv;
+            message.CipheredText = encipted;
+            await db.SaveChangesAsync();
+        }
         
         public async Task RemoveAttachments(int messageId, params int[] idxes)
         {
