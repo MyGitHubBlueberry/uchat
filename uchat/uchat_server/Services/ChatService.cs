@@ -107,18 +107,46 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         return dbChat.Id;
     }
 
-    public async Task<bool> DeleteChatAsync(int chatId)
+    public async Task<bool> DeleteChatAsync(int chatId, int userId)
     {
-        DbChat? chat = await context.Chats.FindAsync(chatId);
-        if (chat is not null)
-        {
-            context.Chats.Remove(chat);
-            context.SaveChanges();
-            return true;
-        }
-        return false;
-    }
+        var chat = await context.Chats
+            .Include(c => c.Members)
+            .FirstOrDefaultAsync(c => c.Id == chatId);
 
+        if (chat == null) return false;
+
+        if (chat.OwnerId != null)
+        {
+            if (chat.OwnerId != userId) throw new InvalidOperationException("Only the group owner can delete this chat.");
+        }
+        else
+        {
+            throw new InvalidOperationException("Direct chat can't be deleted");
+        }
+
+        // Avoid cycle dependeties error
+        // We must unlink the messages from the members before we can delete the messages.
+        foreach (var member in chat.Members)
+        {
+            member.LastMessageId = null;
+        }
+        await context.SaveChangesAsync(); 
+
+        await messageService.DeleteAllMessagesInChatAsync(chatId);
+
+        context.ChatMembers.RemoveRange(chat.Members);
+
+        if (chat.OwnerId != null && !string.IsNullOrEmpty(chat.ImageUrl))
+        {
+            await RemoveGroupChatAvatarAsync(chat); 
+        }
+
+        context.Chats.Remove(chat);
+        
+        await context.SaveChangesAsync();
+        return true;
+    }
+    
     public async Task<Chat> GetChatByIdAsync(int chatId, int userId)
     {
         var dbChat = await context.Chats

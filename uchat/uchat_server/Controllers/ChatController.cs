@@ -54,11 +54,18 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
     }
 
     [HttpDelete("{chatId}")]
-    public IActionResult DeleteChat(int chatId) {
-        try {
-            return Ok(chatService.DeleteChatAsync(chatId));
-        } catch (Exception ex) {
-            return BadRequest(ex.Message);
+    public async Task<IActionResult> DeleteChat(int chatId, [FromQuery] int userId) 
+    {
+        try 
+        {
+            bool deleted = await chatService.DeleteChatAsync(chatId, userId);
+            
+            if (deleted) return Ok(new { Message = "Chat deleted successfully" });
+            return NotFound("Chat not found");
+        } 
+        catch (Exception ex) 
+        {
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
