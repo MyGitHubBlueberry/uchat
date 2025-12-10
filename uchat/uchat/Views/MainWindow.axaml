@@ -12,5 +12,24 @@
     <Grid ColumnDefinitions="250, *">
         <views:ChatSidebar Grid.Column="0"/>
         <views:ChatContent Grid.Column="1" Name="ChatContent"/>
+
+		<Border IsVisible="{Binding IsReconnecting}"
+				Grid.ColumnSpan="2"
+				Background="#DD000000"
+				ZIndex="9999">
+			<StackPanel HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Spacing="20">
+				<ProgressBar IsIndeterminate="True"
+							 Width="300"
+							 Height="6"
+							 Foreground="#4A9EFF"/>
+				<TextBlock Text="Reconnecting to server..."
+						   Foreground="White"
+						   FontSize="18"
+						   FontWeight="SemiBold"
+						   HorizontalAlignment="Center"/>
+			</StackPanel>
+		</Border>
     </Grid>
 </UserControl>

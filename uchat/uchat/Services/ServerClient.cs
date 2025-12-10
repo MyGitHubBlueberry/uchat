@@ -28,6 +28,8 @@ public class ServerClient : IServerClient
     public event Action<Message>? OnMessageEdited;
     public event Action<int>? OnMessageDeleted;
     public event Action? OnDisconnected;
+    public event Action? OnReconnecting;
+    public event Action? OnReconnected;
 
     public ServerClient(IConfiguration configuration, IUserSession userSession)
     {
@@ -331,10 +333,26 @@ public class ServerClient : IServerClient
             OnMessageDeleted?.Invoke(messageId);
         });
 
-        _connection.Closed += error =>
+        _connection.Closed += async error =>
         {
             Console.WriteLine($"Connection closed: {error?.Message}");
             OnDisconnected?.Invoke();
+        };
+
+        _connection.Reconnecting += error =>
+        {
+            OnReconnecting?.Invoke();
+            return Task.CompletedTask;
+        };
+
+        _connection.Reconnected += connectionId =>
+        {
+            OnReconnected?.Invoke();
+
+            if (_currentUserId.HasValue)
+            {
+                return _connection.InvokeAsync("SubscribeUser", _currentUserId.Value);
+            }
             return Task.CompletedTask;
         };
 

@@ -13,7 +13,9 @@ public interface IServerClient
     event Action<Message>? OnMessageEdited;
     event Action<int>? OnMessageDeleted;
     event Action? OnDisconnected;
-    
+    event Action? OnReconnecting;
+    event Action? OnReconnected;
+
     Task<User> UserRegistration(string username, string password);
     Task<User> UserLogin(string  username, string password);
     Task SendMessage(Message message, int chatId, List<string>? imagePaths = null);

@@ -33,6 +33,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private MessageViewModel? _editingMessage;
     [ObservableProperty] private string _editText = string.Empty;
+    [ObservableProperty] private bool _isReconnecting;
 
     public string SelectedChatName => SelectedChat?.DisplayName ?? "Select a chat";
     
@@ -48,7 +49,9 @@ public partial class MainWindowViewModel : ViewModelBase
         _serverClient.OnNewGroupChat += OnNewGroupChat;
         _serverClient.OnMessageEdited += OnMessageEdited;
         _serverClient.OnMessageDeleted += OnMessageDeleted;
-        
+        _serverClient.OnReconnecting += OnReconnecting;
+        _serverClient.OnReconnected += OnReconnected;
+
         OpenProfileCommand = new RelayCommand(OpenProfile);
 
         _ = InitializeAsync();
@@ -73,6 +76,22 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         
         OnPropertyChanged(nameof(SelectedChatName));
+    }
+
+    private void OnReconnecting()
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            IsReconnecting = true;
+        });
+    }
+
+    private void OnReconnected()
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            IsReconnecting = false;
+        });
     }
 
     private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

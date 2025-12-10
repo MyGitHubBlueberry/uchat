@@ -16,6 +16,8 @@ public class LoginWindowViewModel : ViewModelBase, IClearNavigationStack
     private string _password = string.Empty;
     private string _errorMessage = string.Empty;
     private bool _isLoggingIn = false;
+    
+    
 
     public LoginWindowViewModel(
         INavigationService navigationService,
