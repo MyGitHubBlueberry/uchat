@@ -42,6 +42,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         Messages.CollectionChanged += OnMessagesCollectionChanged;
         _serverClient.OnMessageReceived += OnMessageReceived;
+        _serverClient.OnNewChat += OnNewChat;
+        _serverClient.OnNewGroupChat += OnNewGroupChat;
         
         OpenProfileCommand = new RelayCommand(OpenProfile);
 
@@ -270,6 +272,25 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 Console.WriteLine($"Received message for chat {msg.ChatId}, but current chat is {SelectedChat?.Chat.id}");
             }
+        });
+    }
+    
+    private void OnNewChat(Chat chat)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (!Chats.Any(c => c.Chat.id == chat.id))
+            {
+                Chats.Add(new ChatViewModel(chat, _userSession.CurrentUser!.Id));
+            }
+        });
+    }
+    
+    private void OnNewGroupChat(GroupChat groupChat)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Console.WriteLine($"Received new group chat: {groupChat.name} (ID: {groupChat.id})");
         });
     }
     

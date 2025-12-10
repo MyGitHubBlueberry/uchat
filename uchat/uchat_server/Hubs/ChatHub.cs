@@ -30,6 +30,8 @@ public class ChatHub : Hub
             });
 
         _connectionToUser.TryAdd(connectionId, userId);
+        
+        await Groups.AddToGroupAsync(connectionId, $"user_{userId}");
 
         Console.WriteLine($"User {userId} subscribed");
     }

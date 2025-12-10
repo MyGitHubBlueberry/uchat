@@ -8,6 +8,8 @@ namespace uchat;
 public interface IServerClient
 {
     event Action<Message>? OnMessageReceived;
+    event Action<Chat>? OnNewChat;
+    event Action<GroupChat>? OnNewGroupChat;
     event Action? OnDisconnected;
     
     Task<User> UserRegistration(string username, string password);

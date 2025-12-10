@@ -23,6 +23,8 @@ public class ServerClient : IServerClient
     public int? CurrentUserId => _currentUserId;
 
     public event Action<Message>? OnMessageReceived;
+    public event Action<Chat>? OnNewChat;
+    public event Action<GroupChat>? OnNewGroupChat;
     public event Action? OnDisconnected;
 
     public ServerClient(IConfiguration configuration, IUserSession userSession)
@@ -295,6 +297,16 @@ public class ServerClient : IServerClient
         _connection.On<Message>("ReceiveMessage", (message) =>
         {
             OnMessageReceived?.Invoke(message);
+        });
+        
+        _connection.On<Chat>("NewChat", (chat) =>
+        {
+            OnNewChat?.Invoke(chat);
+        });
+        
+        _connection.On<GroupChat>("NewGroupChat", (groupChat) =>
+        {
+            OnNewGroupChat?.Invoke(groupChat);
         });
 
         _connection.Closed += error =>

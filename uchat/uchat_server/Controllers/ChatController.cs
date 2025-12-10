@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using uchat_server.Services;
 using uchat_server.Models;
+using uchat_server.Hubs;
 
 namespace uchat_server.Controllers;
 
 [ApiController]
 [Route("api/chat")]
-public class ChatController(IChatService chatService) : ControllerBase
+public class ChatController(IChatService chatService, IHubContext<ChatHub> hubContext) : ControllerBase
 {
     [HttpPost("create/chat/{sourceUserId}-{targetUserId}")]
     public async Task<IActionResult> CreateChat(int sourceUserId, int targetUserId)
@@ -14,6 +16,13 @@ public class ChatController(IChatService chatService) : ControllerBase
         try
         {
             var newChatId = await chatService.CreateChatAsync(sourceUserId, targetUserId);
+            
+            var chat = await chatService.GetChatByIdAsync(newChatId, sourceUserId);
+            var chatForTarget = await chatService.GetChatByIdAsync(newChatId, targetUserId);
+            
+            await hubContext.Clients.Group($"user_{sourceUserId}").SendAsync("NewChat", chat);
+            await hubContext.Clients.Group($"user_{targetUserId}").SendAsync("NewChat", chatForTarget);
+            
             return Ok(newChatId);
         }
         catch (Exception ex)
@@ -28,6 +37,15 @@ public class ChatController(IChatService chatService) : ControllerBase
         try
         {
             var newChatId = await chatService.CreateGroupChatAsync(chat);
+            
+            var members = await chatService.GetChatMembersAsync(newChatId);
+            // TODO: This code exhibits an N+1 query pattern where GetGroupChatByIdAsync is called once per member in a loop. Consider modifying the service to retrieve all member-specific group chat data in a single query, or if the data is identical for all members, fetch it once before the loop.
+            foreach (var member in members)
+            {
+                var groupChat = await chatService.GetGroupChatByIdAsync(newChatId, member.UserId);
+                await hubContext.Clients.Group($"user_{member.UserId}").SendAsync("NewGroupChat", groupChat);
+            }
+            
             return Ok(newChatId);
         }
         catch (Exception ex)
