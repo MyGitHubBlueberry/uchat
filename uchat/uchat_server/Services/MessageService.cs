@@ -14,6 +14,20 @@ namespace uchat_server.Services
         );
 
         private readonly string _attachmentFolder = "Attachments";
+
+        private async Task<byte[]> GetChatKeyAsync(int chatId)
+        {
+
+            var chat = await db.Chats.FindAsync(chatId);
+            if (chat == null) throw new Exception("Chat not found");
+
+            var keyPackage = new EncryptedMessage(chat.EncryptedKey, chat.KeyIV);
+
+            string decryptedKey = keyPackage.Decrypt(_masterKey);
+
+            return Convert.FromBase64String(decryptedKey);
+        }
+
         public async Task<List<DbMessage>> GetChatMessagesAsync(int chatId, int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -41,6 +55,8 @@ namespace uchat_server.Services
 
             var skip = (pageNumber - 1) * pageSize;
 
+            byte[] chatKey = await GetChatKeyAsync(chatId);
+
             return await db.Messages
                 .Where(m => m.ChatId == chatId)
                 .OrderBy(m => m.TimeSent)
@@ -54,7 +70,7 @@ namespace uchat_server.Services
                     Content = new EncryptedMessage(
                                     m.CipheredText,
                                     m.Iv
-                               ).Decrypt(_masterKey),
+                               ).Decrypt(chatKey),
                     ChatId = m.ChatId,
                     SenderName = m.Sender != null && m.Sender.User != null ? m.Sender.User.Name : string.Empty,
                     Timestamp = m.TimeSent,
@@ -77,6 +93,8 @@ namespace uchat_server.Services
                 throw new Exception($"Can't send message in chat with id '{msg.ChatId}', that doesn't exist.");
             }
 
+            byte[] chatKey = await GetChatKeyAsync(msg.ChatId);
+
             DbUser user = await db.Users
                 .Where(u => u.Name == msg.SenderName)
                 .FirstAsync();
@@ -94,7 +112,7 @@ namespace uchat_server.Services
                 await db.ChatMembers.AddAsync(sender);
             }
 
-            (byte[] text, byte[] iv) = msg.Content.Encrypt(_masterKey);
+            (byte[] text, byte[] iv) = msg.Content.Encrypt(chatKey);
             DbMessage dbMsg = new()
             {
                 CipheredText = text,
@@ -156,8 +174,10 @@ namespace uchat_server.Services
                 throw new Exception("Chat not found");
             }
 
+            byte[] chatKey = await GetChatKeyAsync(chatId);
+
             var encryptedMessage = new EncryptedMessage(message.CipheredText, message.Iv);
-            return encryptedMessage.Decrypt(_masterKey);
+            return encryptedMessage.Decrypt(chatKey);
         }
         
         public async Task<bool> RemoveAttachmentsAsync(int messageId, params int[]? idxes)
@@ -221,7 +241,9 @@ namespace uchat_server.Services
                 .FirstOrDefaultAsync(m => m.Id == messageId)
                 ?? throw new InvalidDataException("Message not found");
 
-            (byte[] encrypted, byte[] iv) = newContent.Encrypt(_masterKey);
+            byte[] chatKey = await GetChatKeyAsync(dbMessage.ChatId);
+
+            (byte[] encrypted, byte[] iv) = newContent.Encrypt(chatKey);
             dbMessage.CipheredText = encrypted;
             dbMessage.Iv = iv;
             dbMessage.TimeEdited = DateTime.UtcNow;

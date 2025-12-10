@@ -19,5 +19,6 @@ namespace uchat_server.Services
         Task<List<ChatMemberDto>> GetChatMembersAsync(int chatId);
         Task<bool> IsMemberOfChatAsync(int chatId, int userId);
         Task<bool> IsOwnerOfChatAsync(int chatId, int userId);
+        Task UpdateGroupChatAsync(int chatId, int userId, UpdateGroupChatRequest request);
     }
 }

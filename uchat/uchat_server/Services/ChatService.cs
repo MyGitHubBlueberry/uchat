@@ -410,4 +410,29 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         return await context.Chats
             .AnyAsync(c => c.Id == chatId && c.OwnerId == userId);
     }
+
+    public async Task UpdateGroupChatAsync(int chatId, int userId, UpdateGroupChatRequest request)
+    {
+        var chat = await context.Chats.FindAsync(chatId);
+        if (chat == null) throw new Exception("Chat not found");
+
+        if (chat.OwnerId == null)
+        {
+            throw new InvalidOperationException("You cannot change the name/description of a Direct Chat.");
+        }
+
+        if (chat.OwnerId != userId)
+        {
+            throw new InvalidOperationException("Only the group owner can update chat details.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            chat.Title = request.Name;
+        }
+        
+        chat.Description = request.Description;
+
+        await context.SaveChangesAsync();
+    }
 }

@@ -205,4 +205,18 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
             return BadRequest(new { Error = ex.Message });
         }
     }
+
+    [HttpPut("{chatId}/info")]
+    public async Task<IActionResult> UpdateGroupInfo(int chatId, [FromQuery] int userId, [FromBody] UpdateGroupChatRequest request)
+    {
+        try
+        {
+            await chatService.UpdateGroupChatAsync(chatId, userId, request);
+            return Ok(new { Message = "Group info updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
 }
