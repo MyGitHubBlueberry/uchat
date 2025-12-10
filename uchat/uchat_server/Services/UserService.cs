@@ -138,7 +138,7 @@ namespace uchat_server.Services
 
         private async Task UploadProfilePicture(DbUser user, IFormFile file) {
             await RemoveProfilePicture(user);
-            user.ImageUrl = await FileManager.Save(file, "ProfilePictures");
+            user.ImageUrl = await FileManager.SaveAvatar(file, "ProfilePictures");
             await context.SaveChangesAsync();
         }
 
