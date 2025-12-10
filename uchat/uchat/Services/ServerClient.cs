@@ -27,8 +27,28 @@ public class ServerClient : IServerClient
 
     public ServerClient(IConfiguration configuration, IUserSession userSession)
     {
-        var envPort = Environment.GetEnvironmentVariable("UCHAT_SERVER_PORT", EnvironmentVariableTarget.User);
-        var port = string.IsNullOrEmpty(envPort) ? "5000" : envPort;
+        var args = Environment.GetCommandLineArgs();
+
+        string? host = null;
+        string? port = null;
+
+        // -h <ip> -p <port>
+        for (int i = 1; i < args.Length - 1; i++)
+        {
+            if (args[i] == "-h")
+            {
+                host = args[i + 1];
+            }
+            else if (args[i] == "-p")
+            {
+                port = args[i + 1];
+            }
+        }
+
+        host ??= Environment.GetEnvironmentVariable("UCHAT_SERVER_HOST", EnvironmentVariableTarget.User) ?? "localhost";
+        port ??= Environment.GetEnvironmentVariable("UCHAT_SERVER_PORT", EnvironmentVariableTarget.User) ?? "5000";
+
+        _serverUrl = $"http://{host}:{port}";
 
         _serverUrl = $"http://localhost:{port}";
         _userSession = userSession;
