@@ -146,6 +146,18 @@
                                    FontSize="14" 
                                    FontWeight="SemiBold"/>
 
+						<Button Content="Logout"
+                            Command="{Binding LogoutAccountCommand}"
+                            Background="#FEE75C"
+                            Foreground="#17212b"
+                            Padding="15,10"
+                            CornerRadius="8"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Cursor="Hand"/>
+						
                         <Button Content="Delete Account" 
                                 Command="{Binding DeleteAccountCommand}"
                                 Background="#ED4245"

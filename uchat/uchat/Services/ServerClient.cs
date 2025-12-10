@@ -347,6 +347,42 @@ public class ServerClient : IServerClient
             throw new Exception($"{response.Content}");
         }
 
+        if (_connection != null)
+        {
+            try
+            {
+                if (_connection.State == HubConnectionState.Connected)
+                {
+                    await _connection.StopAsync();
+                }
+                await _connection.DisposeAsync();
+                _connection = null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error disconnecting: {ex.Message}");
+            }
+        }
+
+        _currentUserId = null;
+
+        return true;
+    }
+
+    public async Task<bool> LogoutAccount(int userId)
+    {
+        if (_connection != null)
+        {
+            if (_connection.State == HubConnectionState.Connected)
+            {
+                await _connection.StopAsync();
+            }
+            await _connection.DisposeAsync();
+            _connection = null;
+        }
+
+        _currentUserId = null;
+
         return true;
     }
 

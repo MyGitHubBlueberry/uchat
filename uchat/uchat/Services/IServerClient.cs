@@ -26,5 +26,6 @@ public interface IServerClient
     Task RemoveProfilePicture(int userId);
     Task UpdatePassword(int userId, string? currentPassword, string newPassword);
     Task<bool> DeleteAccount(int userId);
+    Task<bool> LogoutAccount(int userId);
     Task<List<User>> SearchUsers(string partialName);
 }

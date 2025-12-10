@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
@@ -28,6 +27,7 @@ public partial class ProfileViewModel : ViewModelBase
     public ICommand RemovePictureCommand { get; }
     public ICommand UpdatePasswordCommand { get; }
     public ICommand DeleteAccountCommand { get; }
+    public ICommand LogoutAccountCommand { get; }
 
     public ProfileViewModel(IServerClient serverClient, 
         IUserSession userSession, 
@@ -46,6 +46,35 @@ public partial class ProfileViewModel : ViewModelBase
         RemovePictureCommand = new RelayCommand(RemovePictureAsync);
         UpdatePasswordCommand = new RelayCommand(UpdatePasswordAsync);
         DeleteAccountCommand = new RelayCommand(DeleteAccountAsync);
+        LogoutAccountCommand = new RelayCommand(LogoutAccountAsync);
+
+    }
+    private async Task LogoutAccountAsync()
+    {
+        if (_userSession.CurrentUser == null) return;
+
+        try
+        {
+            IsLoading = true;
+            StatusMessage = string.Empty;
+
+            var result = await _serverClient.LogoutAccount(_userSession.CurrentUser.Id);
+
+            if (result)
+            {
+                _userSession.Clear();
+                _closeAction.Invoke();
+                _navigationService.NavigateTo<LoginWindowViewModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage =  ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task UploadPictureAsync()
