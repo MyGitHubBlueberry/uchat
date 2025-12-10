@@ -192,6 +192,12 @@ namespace uchat_server.Services
             var chatMemberships = await context.ChatMembers
                 .Where(cm => cm.UserId == userId)
                 .ToListAsync();
+            foreach (var cm in chatMemberships)
+            {
+                cm.LastMessage = null;
+            }
+            await context.SaveChangesAsync();
+
             context.ChatMembers.RemoveRange(chatMemberships);
 
             await RemoveProfilePicture(user);
