@@ -7,5 +7,6 @@ public class Message
     public string SenderName { get; set; } = null!;
     public int ChatId { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime LastEdited { get; set; } = DateTime.UtcNow;
     public List<Attachment>? Attachments { get; set; }
 }

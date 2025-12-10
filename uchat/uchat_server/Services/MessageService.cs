@@ -71,7 +71,8 @@ namespace uchat_server.Services
         public async Task SaveMessageAsync(Message msg, List<IFormFile>? files = null)
         {
             DbChat? dbChat = await db.Chats.FindAsync(msg.ChatId);
-            if (dbChat is null) {
+            if (dbChat is null)
+            {
                 throw new Exception("Can't send message in chat, that doesn't exist.");
             }
 
@@ -80,8 +81,10 @@ namespace uchat_server.Services
                 .FirstAsync();
 
             DbChatMember? sender = await db.ChatMembers.FindAsync(user.Id, msg.ChatId);
-            if (sender is null) {
-                sender = new DbChatMember {
+            if (sender is null)
+            {
+                sender = new DbChatMember
+                {
                     UserId = user.Id,
                     User = user,
                     ChatId = msg.ChatId,
@@ -91,7 +94,8 @@ namespace uchat_server.Services
             }
 
             (byte[] text, byte[] iv) = msg.Content.Encrypt(_masterKey);
-            DbMessage dbMsg = new DbMessage() {
+            DbMessage dbMsg = new DbMessage()
+            {
                 CipheredText = text,
                 Iv = iv,
                 TimeSent = msg.Timestamp,
@@ -107,11 +111,11 @@ namespace uchat_server.Services
 
                 foreach (var file in files)
                 {
-                    string uniqueFIleName = await FileManager.Save(file, _attachmentFolder);
+                    string uniqueFileName = await FileManager.Save(file, _attachmentFolder);
 
                     dbMsg.Attachments.Add(new DbAttachment
                     {
-                        Url = Path.Combine(_attachmentFolder, uniqueFIleName),
+                        Url = uniqueFileName,
                         Message = dbMsg
                     });
                 }
@@ -123,12 +127,12 @@ namespace uchat_server.Services
             var chatMembers = await db.ChatMembers
                 .Where(m => m.ChatId == msg.ChatId)
                 .ToListAsync();
-            
+
             foreach (var member in chatMembers)
             {
                 member.LastMessageId = dbMsg.Id;
             }
-            
+
             await db.SaveChangesAsync();
         }
 
@@ -142,6 +146,69 @@ namespace uchat_server.Services
 
             var encryptedMessage = new EncryptedMessage(message.CipheredText, message.Iv);
             return encryptedMessage.Decrypt(_masterKey);
+        }
+
+        // public async Task EditMessage(int messageId, EditMode mode, params IFormFile[] files)
+        // {
+        //     var message = await db.Messages.FindAsync(messageId)
+        //         ?? throw new InvalidDataException("Message not found");
+        //     if (files == null || files.Length == 0)
+        //         return;
+        //     switch (mode)
+        //     {
+        //         case EditMode.Add:
+        //             await AddAttachments(message, files);
+        //             break;
+        //         case EditMode.Change:
+        //             break;
+        //     }
+        // }
+        
+        public async Task RemoveAttachments(int messageId, params int[] idxes)
+        {
+            DbMessage message = await db.Messages.FindAsync(messageId)
+                ?? throw new InvalidDataException("Message not found");
+            if (message.Attachments is null)
+                return;
+            if (idxes is null || idxes.Length == 0)
+            {
+                var urls = message.Attachments.Select(a => a.Url);
+                message.Attachments.Clear();
+                foreach (var url in urls)
+                    FileManager.Delete(_attachmentFolder, url);
+            }
+            else
+            {
+                var attachments = idxes
+                    .Select(idx => message.Attachments.ElementAtOrDefault(idx))
+                    .OfType<DbAttachment>();
+                if (attachments is null)
+                    return;
+                foreach (DbAttachment attachment in attachments)
+                    FileManager.Delete(_attachmentFolder, attachment.Url);
+            }
+            await db.SaveChangesAsync();
+        }
+
+        private async Task AddAttachments(int messageId, params IFormFile[] files)
+        {
+            var message = await db.Messages.FindAsync(messageId)
+                ?? throw new InvalidDataException("Message not found");
+            if (files == null || files.Length == 0)
+                return;
+            if (message.Attachments is null)
+                message.Attachments = new List<DbAttachment>();
+            var urls = await Task.WhenAll(files
+                .Select(async file =>
+                    await FileManager
+                    .Save(file, _attachmentFolder)));
+            message.Attachments
+                .AddRange(urls
+                    .Select(url => new DbAttachment
+                        {
+                            Message = message,
+                            Url = url
+                        }));
         }
     }
 }
