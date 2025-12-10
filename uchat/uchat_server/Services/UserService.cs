@@ -270,5 +270,37 @@ namespace uchat_server.Services
 
             await context.SaveChangesAsync();
         }
+
+        public async Task UnblockUserAsync(int userId, int targetUserId)
+        {
+            // --- 1. UserRelations ---
+            var relation = await context.UserRelations
+                .FirstOrDefaultAsync(r => r.SourceUserId == userId && r.TargetUserId == targetUserId);
+
+            if (relation != null)
+            {
+                relation.IsBlocked = false;
+            }
+
+            // --- 2. DbChatMember ---
+            var commonChat = await context.Chats
+                .Where(c => c.OwnerId == null)
+                .Where(c => c.Members.Any(m => m.UserId == userId) && 
+                            c.Members.Any(m => m.UserId == targetUserId))
+                .FirstOrDefaultAsync();
+
+            if (commonChat != null)
+            {
+                var myMemberRecord = await context.ChatMembers
+                    .FirstOrDefaultAsync(m => m.ChatId == commonChat.Id && m.UserId == userId);
+
+                if (myMemberRecord != null)
+                {
+                    myMemberRecord.IsBlocked = false;
+                }
+            }
+
+            await context.SaveChangesAsync();
+        }
     }
 }

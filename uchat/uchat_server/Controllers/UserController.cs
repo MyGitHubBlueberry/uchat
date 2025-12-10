@@ -135,4 +135,13 @@ public class UserController(IUserService userService) : ControllerBase
             return Ok(new { Message = "User blocked" });
         } catch (Exception ex) { return BadRequest(ex.Message); }
     }
+
+    [HttpPost("{userId}/unblock/{targetId}")]
+    public async Task<IActionResult> UnblockUser(int userId, int targetId)
+    {
+        try {
+            await userService.UnblockUserAsync(userId, targetId);
+            return Ok(new { Message = "User unblocked" });
+        } catch (Exception ex) { return BadRequest(new { Error = ex.Message }); }
+    }
 }

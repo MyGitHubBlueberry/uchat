@@ -15,5 +15,6 @@ namespace uchat_server.Services
         Task UpdatePasswordAsync(int userId, UpdatePasswordRequest request);
         Task DeleteUserAsync(int userId);
         Task BlockUserAsync(int userId, int targetUserId);
+        Task UnblockUserAsync(int userId, int targetUserId);
     }
 }
