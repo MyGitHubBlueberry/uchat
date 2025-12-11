@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using uchat_server.Services;
 using uchat_server.Models;
+using uchat_server.Files;
 
 namespace uchat_server.Controllers;
 
@@ -80,6 +81,9 @@ public class UserController(IUserService userService) : ControllerBase
         catch (InvalidOperationException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
         }
         catch (Exception ex)
         {

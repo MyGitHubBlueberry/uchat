@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using uchat_server.Services;
 using uchat_server.Models;
 using uchat_server.Hubs;
+using uchat_server.Files;
 
 namespace uchat_server.Controllers;
 
@@ -206,6 +207,9 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         {
             return NotFound(ex.Message);
         }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
+        }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
@@ -219,7 +223,7 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         {
             return Ok(await chatService.RemoveGroupChatAvatarAsync(chatId));
         }
-        catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
+        catch (InvalidDataException e)
         {
             return NotFound(e.Message);
         }

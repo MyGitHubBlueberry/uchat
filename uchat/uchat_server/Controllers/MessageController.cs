@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SharedLibrary.Models;
+using uchat_server.Files;
 using uchat_server.Hubs;
 using uchat_server.Services;
 
@@ -29,6 +30,9 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         catch (InvalidDataException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
         }
         catch (Exception ex)
         {
@@ -69,6 +73,9 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         try
         {
             await messageService.AddAttachmentsAsync(messageId, files);
+        }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
         }
         catch (InvalidDataException ex)
         {
