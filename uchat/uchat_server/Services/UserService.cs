@@ -187,7 +187,7 @@ namespace uchat_server.Services
         public async Task DeleteUserAsync(int userId)
         {
             var user = await context.Users.FindAsync(userId);
-            if (user == null) throw new Exception("User not found.");
+            if (user == null) throw new InvalidDataException("User not found.");
 
             var userMessages = await context.Messages
                 .Where(m => m.SenderId == userId)
