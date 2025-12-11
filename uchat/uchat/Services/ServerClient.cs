@@ -178,7 +178,7 @@ public class ServerClient : IServerClient
 
     public async Task EditMessage(string newMessage, int chatId, int messageId)
     {
-        var response = await _httpClient.PutAsJsonAsync($"{_serverUrl}/api/message/{messageId}", newMessage);
+        var response = await _httpClient.PatchAsync($"{_serverUrl}/api/message/text/{messageId}?text={Uri.EscapeDataString(newMessage)}", null);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -304,6 +304,36 @@ public class ServerClient : IServerClient
 
         var chatId = await response.Content.ReadFromJsonAsync<int>();
         return chatId;
+    }
+
+    public async Task<bool> DeleteChat(int chatId, int userId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_serverUrl}/api/chat/{chatId}/user/{userId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error deleting chat: {response.StatusCode} - {errorContent}");
+        }
+
+        return true;
+    }
+
+    public async Task UpdateGroupChat(int chatId, int userId, string? name = null, string? description = null)
+    {
+        var request = new 
+        {
+            Name = name,
+            Description = description
+        };
+
+        var response = await _httpClient.PutAsJsonAsync($"{_serverUrl}/api/chat/{chatId}/info?userId={userId}", request);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error updating group chat: {response.StatusCode} - {errorContent}");
+        }
     }
 
     public async Task JoinChatGroup(int chatId, List<int> memberIds)

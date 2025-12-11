@@ -54,17 +54,21 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
     }
 
     [HttpPatch("text/{messageId}")]
-    public async Task<IActionResult> ChangeMessageText(int messageId, string text)
+    public async Task<IActionResult> ChangeMessageText(int messageId, [FromQuery] string text)
     {
         try
         {
-            await messageService.ChangeMessageTextAsync(messageId, text);
+            var editedMessage = await messageService.EditMessageAsync(messageId, text);
+            
+            await hubContext.Clients.Group(editedMessage.ChatId.ToString())
+                .SendAsync("MessageEdited", editedMessage);
+            
+            return Ok(new { Message = "Changed" });
         }
         catch (InvalidDataException ex)
         {
             return NotFound(new { Error = ex.Message });
         }
-        return Ok(new { Message = "Changed" });
     }
 
     [HttpDelete("{messageId}")]

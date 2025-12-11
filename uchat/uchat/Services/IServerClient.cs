@@ -26,6 +26,8 @@ public interface IServerClient
     Task<(Chat[], GroupChat[])> GetChats();
     Task<int> CreateChat(int sourceUserId, int targetUserId);
     Task<int> CreateGroupChat(string name, int ownerId, List<int> participantIds, string? description = null);
+    Task<bool> DeleteChat(int chatId, int userId);
+    Task UpdateGroupChat(int chatId, int userId, string? name = null, string? description = null);
     Task JoinChatGroup(int chatId, List<int> memberIds);
     Task LeaveChatGroup(int chatId);
     Task UploadProfilePicture(int userId, string filePath);
