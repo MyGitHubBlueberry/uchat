@@ -57,6 +57,9 @@ public class ServerClient : IServerClient
         _serverUrl = $"http://{host}:{port}";
 
         _serverUrl = $"http://localhost:{port}";
+        
+        ServerConfig.BaseUrl = _serverUrl;
+        
         _userSession = userSession;
         
         _httpClient = new HttpClient();

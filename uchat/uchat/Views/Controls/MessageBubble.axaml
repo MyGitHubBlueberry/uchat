@@ -25,8 +25,8 @@
                            FontSize="14"
                            Margin="0,0,0,2"/>
 
-                <ItemsControl ItemsSource="{Binding Attachments}" 
-                              IsVisible="{Binding Attachments.Count}"
+                <ItemsControl ItemsSource="{Binding AttachmentViewModels}" 
+                              IsVisible="{Binding AttachmentViewModels.Count}"
                               Margin="0,0,0,4">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -36,7 +36,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Width="150" Height="150" CornerRadius="8" ClipToBounds="True" Margin="0,0,4,4" Background="#2C303E">
-                                <Image Source="{Binding Url}" Stretch="UniformToFill"/>
+                                <Image Source="{Binding Image^}" Stretch="UniformToFill"/>
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -86,8 +86,8 @@
                            HorizontalAlignment="Right"
                            Margin="0,0,0,2"/>
 
-                <ItemsControl ItemsSource="{Binding Attachments}" 
-                              IsVisible="{Binding Attachments.Count}"
+                <ItemsControl ItemsSource="{Binding AttachmentViewModels}" 
+                              IsVisible="{Binding AttachmentViewModels.Count}"
                               Margin="0,0,0,4"
                               HorizontalAlignment="Right">
                     <ItemsControl.ItemsPanel>
@@ -98,7 +98,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Width="150" Height="150" CornerRadius="8" ClipToBounds="True" Margin="4,0,0,4" Background="#2C303E">
-                                <Image Source="{Binding Url}" Stretch="UniformToFill"/>
+                                <Image Source="{Binding Image^}" Stretch="UniformToFill"/>
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

@@ -20,6 +20,9 @@ public partial class StyledTextBox : StyledInputBase
     public static readonly StyledProperty<ICommand?> EnterCommandProperty =
         AvaloniaProperty.Register<StyledTextBox, ICommand?>(nameof(EnterCommand));
 
+    public static readonly StyledProperty<ICommand?> PasteCommandProperty =
+        AvaloniaProperty.Register<StyledTextBox, ICommand?>(nameof(PasteCommand));
+
     public string Text
     {
         get => GetValue(TextProperty);
@@ -42,6 +45,12 @@ public partial class StyledTextBox : StyledInputBase
     {
         get => GetValue(EnterCommandProperty);
         set => SetValue(EnterCommandProperty, value);
+    }
+
+    public ICommand? PasteCommand
+    {
+        get => GetValue(PasteCommandProperty);
+        set => SetValue(PasteCommandProperty, value);
     }
 
     public StyledTextBox()
@@ -77,6 +86,15 @@ public partial class StyledTextBox : StyledInputBase
             {
                 EnterCommand.Execute(null);
                 e.Handled = true;
+            }
+            else if (e.Key == Key.V && e.KeyModifiers == KeyModifiers.Control)
+            {
+                if (PasteCommand?.CanExecute(null) == true)
+                {
+                    PasteCommand.Execute(null);
+                    // Mark as handled to prevent default paste behavior alongside custom command
+                    e.Handled = true;
+                }
             }
         };
 

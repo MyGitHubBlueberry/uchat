@@ -64,6 +64,7 @@ class Program {
         app.MapOpenApi();
         app.MapScalarApiReference();
 
+        app.UseStaticFiles();
         app.UseCors();
         app.MapHub<ChatHub>("/chatHub");
         app.MapControllers();

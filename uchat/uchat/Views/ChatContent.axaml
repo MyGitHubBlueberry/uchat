@@ -31,9 +31,10 @@
         <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="20,20,20,10" IsVisible="{Binding AttachedImages.Count}">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" 
                           VerticalScrollBarVisibility="Disabled"
-                          MaxHeight="90"
+                          MaxHeight="120"
                           Background="#17212b"
                           CornerRadius="8"
+                          Padding="8"
                           HorizontalAlignment="Stretch">
                 <ItemsControl ItemsSource="{Binding AttachedImages}" HorizontalAlignment="Left">
                     <ItemsControl.ItemsPanel>
@@ -43,21 +44,21 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Width="80" Height="80" CornerRadius="8" ClipToBounds="True" Background="#2C303E">
+                            <Border Width="100" Height="100" CornerRadius="8" ClipToBounds="True" Background="#2C303E">
                                 <Grid>
-                                    <Image Source="{Binding .}" Stretch="UniformToFill"/>
+                                    <Image Source="{Binding Preview^}" Stretch="UniformToFill"/>
                                     <Button Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RemoveAttachmentCommand}"
-                                            CommandParameter="{Binding .}"
+                                            CommandParameter="{Binding}"
                                             Background="#40000000"
-                                            Width="20"
-                                            Height="20"
-                                            CornerRadius="10"
+                                            Width="24"
+                                            Height="24"
+                                            CornerRadius="12"
                                             Padding="0"
                                             Margin="4"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Top"
                                             Cursor="Hand">
-                                        <TextBlock Text="×" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <TextBlock Text="×" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Button>
                                 </Grid>
                             </Border>
@@ -117,7 +118,8 @@
                                             PaddingValue="16,12"
                                             VerticalAlignment="Center"
                                             Text="{Binding MessageText}"
-                                            EnterCommand="{Binding SendCommand}"/>
+                                            EnterCommand="{Binding SendCommand}"
+                                            PasteCommand="{Binding PasteFromClipboardCommand}"/>
                     <Button Grid.Column="2" Width="45" Height="45" CornerRadius="25" Background="#2b5278" Margin="10,0,0,0" Cursor="Hand" Command="{Binding SendCommand}">
                         <TextBlock Text="➤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
                     </Button>

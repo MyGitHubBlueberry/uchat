@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Threading;
@@ -25,7 +26,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<IChatItemViewModel> Chats { get; } = new();
     public ObservableCollection<MessageViewModel> Messages { get; } = new(); 
     public ObservableCollection<User> SearchResults { get; } = new();
-    public ObservableCollection<string> AttachedImages { get; } = new();
+    public ObservableCollection<AttachmentPreviewViewModel> AttachedImages { get; } = new();
     
     [ObservableProperty] private IChatItemViewModel? _selectedChat;
     [ObservableProperty] private string _messageText = string.Empty;
@@ -215,10 +216,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
         MessageText = "";
 
-        await _serverClient.SendMessage(msg, chatId, AttachedImages.Count > 0 ? [.. AttachedImages] : null);
+        var imagePaths = AttachedImages.Count > 0 
+            ? AttachedImages.Select(a => a.FilePath).ToList() 
+            : null;
+
+        await _serverClient.SendMessage(msg, chatId, imagePaths);
         
         if (AttachedImages.Count > 0)
         {
+            foreach (var attachment in AttachedImages)
+            {
+                attachment.Dispose();
+            }
             AttachedImages.Clear();
         }
     }
@@ -248,17 +257,36 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (file.TryGetLocalPath() is string path)
             {
-                AttachedImages.Add(path);
+                AttachedImages.Add(new AttachmentPreviewViewModel(path));
             }
         }
     }
 
     [RelayCommand]
-    private void RemoveAttachment(string path)
+    private void RemoveAttachment(AttachmentPreviewViewModel attachment)
     {
-        AttachedImages.Remove(path);
+        AttachedImages.Remove(attachment);
+        attachment.Dispose();
     }
-    
+
+    [RelayCommand]
+    private static async Task PasteFromClipboard()
+    {
+        try
+        {
+            var topLevel = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = topLevel?.MainWindow;
+            if (mainWindow == null) return;
+
+            var clipboard = mainWindow.Clipboard;
+            if (clipboard == null) return;
+                    }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error accessing clipboard: {ex.Message}");
+        }
+    }
+
     [RelayCommand]
     private async Task LoadChats()
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SharedLibrary.Models;
 
 namespace uchat.ViewModels;
@@ -13,6 +14,10 @@ public class MessageViewModel
         _message = message ?? throw new ArgumentNullException(nameof(message));
         HostViewModel = hostViewModel ?? throw new ArgumentNullException(nameof(hostViewModel));
         IsFromCurrentUser = _message.SenderName == currentUserName;
+        
+        AttachmentViewModels = _message.Attachments?
+            .Select(a => new AttachmentViewModel(a))
+            .ToList() ?? [];
     }
     
     public bool IsFromCurrentUser { get; }
@@ -30,6 +35,8 @@ public class MessageViewModel
     public int ChatId => _message.ChatId;
     
     public List<Attachment>? Attachments => _message.Attachments;
+    
+    public List<AttachmentViewModel> AttachmentViewModels { get; }
     
     public bool IsEdited => _message.IsEdited;
     
