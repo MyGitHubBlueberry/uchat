@@ -363,10 +363,11 @@ public class ServerClient : IServerClient
             OnMessageDeleted?.Invoke(messageId);
         });
 
-        _connection.Closed += async error =>
+        _connection.Closed += error =>
         {
             Console.WriteLine($"Connection closed: {error?.Message}");
             OnDisconnected?.Invoke();
+            return Task.CompletedTask;
         };
 
         _connection.Reconnecting += error =>

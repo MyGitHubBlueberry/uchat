@@ -111,12 +111,12 @@
                     <Border.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Edit" 
-                                      Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).StartEditMessageCommand}" 
-                                      CommandParameter="{Binding .}"
+                                      Command="{Binding HostViewModel.StartEditMessageCommand}" 
+                                      CommandParameter="{Binding}"
                                       IsEnabled="{Binding CanEdit}"/>
                             <MenuItem Header="Delete" 
-                                      Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).DeleteMessageCommand}" 
-                                      CommandParameter="{Binding .}"
+                                      Command="{Binding HostViewModel.DeleteMessageCommand}" 
+                                      CommandParameter="{Binding}"
                                       IsEnabled="{Binding CanEdit}"/>
                         </ContextMenu>
                     </Border.ContextMenu>

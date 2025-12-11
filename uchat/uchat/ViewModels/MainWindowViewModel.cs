@@ -132,7 +132,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private MessageViewModel CreateMessageViewModel(Message msg)
     {
-        return new MessageViewModel(msg, UserName);
+        return new MessageViewModel(msg, UserName, this);
     }
     
     private async Task InitializeAsync()
@@ -158,7 +158,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 chatId = await _serverClient.CreateChat(_userSession.CurrentUser!.Id, chatViewModel.Chat.userTo.Id);
             }
-            catch (Exception ex) when (ex.Message.Contains("Chat already exists"))
+            catch (Exception ex) when (ex.Message.Contains("Chat already exists", StringComparison.OrdinalIgnoreCase))
             {
                 await LoadChats();
                 
@@ -178,7 +178,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
                 else
                 {
-                    throw;
+                    Console.WriteLine($"Chat exists but not found in local list. Reloading...");
+                    return;
                 }
             }
             

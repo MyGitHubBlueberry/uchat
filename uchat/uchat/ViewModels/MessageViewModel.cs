@@ -8,13 +8,16 @@ public class MessageViewModel
 {
     private readonly Message _message;
     
-    public MessageViewModel(Message message, string currentUserName)
+    public MessageViewModel(Message message, string currentUserName, MainWindowViewModel hostViewModel)
     {
         _message = message ?? throw new ArgumentNullException(nameof(message));
+        HostViewModel = hostViewModel ?? throw new ArgumentNullException(nameof(hostViewModel));
         IsFromCurrentUser = _message.SenderName == currentUserName;
     }
     
     public bool IsFromCurrentUser { get; }
+    
+    public MainWindowViewModel HostViewModel { get; }
     
     public string Content => _message.Content;
     
