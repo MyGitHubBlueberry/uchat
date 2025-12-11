@@ -361,68 +361,128 @@ public partial class MainWindowViewModel : ViewModelBase
             var messageViewModel = Messages.FirstOrDefault(m => m.Id == msg.Id);
             if (messageViewModel != null)
             {
+                var oldContent = messageViewModel.Content;
                 var index = Messages.IndexOf(messageViewModel);
                 Messages[index] = CreateMessageViewModel(msg);
-            }
-            
-            var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == msg.ChatId);
-            if (chatViewModel != null)
-            {
-                var oldContent = messageViewModel?.Content ?? "";
-                var oldPreview = oldContent.Length > 50 ? oldContent[..50] + "..." : oldContent;
                 
-                if (chatViewModel.LastMessagePreview == oldPreview)
+                var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == msg.ChatId);
+                if (chatViewModel != null)
                 {
-                    chatViewModel.UpdateLastMessage(msg.Content);
+                    var isLastMessage = Messages
+                        .Where(m => m.ChatId == msg.ChatId)
+                        .OrderByDescending(m => m.Timestamp)
+                        .ThenByDescending(m => m.Id)
+                        .FirstOrDefault()?.Id == msg.Id;
+                    
+                    if (isLastMessage)
+                    {
+                        chatViewModel.UpdateLastMessage(msg.Content);
+                    }
+                }
+            }
+            else
+            {
+                var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == msg.ChatId);
+                if (chatViewModel != null && SelectedChat?.ChatId != msg.ChatId)
+                {
+                    if (!string.IsNullOrEmpty(msg.Content) && !string.IsNullOrEmpty(chatViewModel.LastMessagePreview))
+                    {
+                        var previewStart = chatViewModel.LastMessagePreview.Length > 50 
+                            ? chatViewModel.LastMessagePreview[..50] 
+                            : chatViewModel.LastMessagePreview;
+                        var msgPreviewStart = msg.Content.Length > 50 
+                            ? msg.Content[..50] 
+                            : msg.Content;
+                        
+                        var compareLength = Math.Min(20, msgPreviewStart.Length);
+                        if (compareLength > 0 && previewStart.StartsWith(msgPreviewStart[..compareLength]))
+                        {
+                            chatViewModel.UpdateLastMessage(msg.Content);
+                        }
+                    }
+                    else if (string.IsNullOrEmpty(msg.Content))
+                    {
+                        chatViewModel.UpdateLastMessage(msg.Content);
+                    }
                 }
             }
         });
     }
 
-    private void OnMessageDeleted(int messageId)
+    private void OnMessageDeleted(int messageId, int chatId)
     {
         Dispatcher.UIThread.InvokeAsync(async () =>
         {
             var messageViewModel = Messages.FirstOrDefault(m => m.Id == messageId);
             if (messageViewModel != null)
             {
-                var chatId = messageViewModel.ChatId;
-                var deletedContent = messageViewModel.Content;
-                var deletedPreview = deletedContent.Length > 50 ? deletedContent[..50] + "..." : deletedContent;
+                var wasLastMessage = Messages
+                    .Where(m => m.ChatId == chatId)
+                    .OrderByDescending(m => m.Timestamp)
+                    .ThenByDescending(m => m.Id)
+                    .FirstOrDefault()?.Id == messageId;
                 
                 Messages.Remove(messageViewModel);
                 
-                // Update chat preview if the deleted message preview matches current preview
-                var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == chatId);
-                if (chatViewModel != null && chatViewModel.LastMessagePreview == deletedPreview)
+                if (wasLastMessage)
                 {
-                    var newLastMessage = Messages
-                        .Where(m => m.ChatId == chatId)
-                        .OrderByDescending(m => m.Timestamp)
-                        .FirstOrDefault();
-                    
-                    if (newLastMessage != null)
+                    var chatViewModel = Chats.FirstOrDefault(c => c.ChatId == chatId);
+                    if (chatViewModel != null)
                     {
-                        chatViewModel.UpdateLastMessage(newLastMessage.Content);
-                    }
-                    else
-                    {
-                        try
+                        var newLastMessage = Messages
+                            .Where(m => m.ChatId == chatId)
+                            .OrderByDescending(m => m.Timestamp)
+                            .ThenByDescending(m => m.Id)
+                            .FirstOrDefault();
+                        
+                        if (newLastMessage != null)
                         {
-                            var messages = await _serverClient.GetMessages(chatId, 1, 1);
-                            if (messages.Count > 0)
+                            chatViewModel.UpdateLastMessage(newLastMessage.Content);
+                        }
+                        else
+                        {
+                            try
                             {
-                                chatViewModel.UpdateLastMessage(messages[0].Content);
+                                var messages = await _serverClient.GetMessages(chatId, 1, 1);
+                                if (messages.Count > 0)
+                                {
+                                    chatViewModel.UpdateLastMessage(messages[0].Content);
+                                }
+                                else
+                                {
+                                    chatViewModel.UpdateLastMessage("No messages yet");
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
+                                Console.WriteLine($"Error fetching messages after delete: {ex.Message}");
                                 chatViewModel.UpdateLastMessage("No messages yet");
                             }
                         }
-                        catch
+                    }
+                }
+            }
+            else
+            {
+                var affectedChat = Chats.FirstOrDefault(c => c.ChatId == chatId);
+                
+                if (affectedChat != null)
+                {
+                    try
+                    {
+                        var messages = await _serverClient.GetMessages(chatId, 1, 1);
+                        if (messages.Count > 0)
                         {
-                            chatViewModel.UpdateLastMessage("No messages yet");
+                            affectedChat.UpdateLastMessage(messages[0].Content);
                         }
+                        else
+                        {
+                            affectedChat.UpdateLastMessage("No messages yet");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error updating chat preview for chat {chatId}: {ex.Message}");
                     }
                 }
             }

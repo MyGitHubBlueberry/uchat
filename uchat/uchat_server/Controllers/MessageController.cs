@@ -78,7 +78,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         {
             int chatId = await messageService.DeleteMessageAsync(messageId);
             await hubContext.Clients.Group(chatId.ToString())
-                .SendAsync("MessageDeleted", messageId);
+                .SendAsync("MessageDeleted", messageId, chatId);
             return Ok(new { Status = "Deleted" });
         }
         catch (InvalidDataException ex)

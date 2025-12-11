@@ -279,6 +279,24 @@ namespace uchat_server.Services
 
             int chatId = dbMessage.ChatId;
 
+            var membersWithThisLastMessage = await db.ChatMembers
+                .Where(m => m.ChatId == chatId && m.LastMessageId == messageId)
+                .ToListAsync();
+
+            if (membersWithThisLastMessage.Count > 0)
+            {
+                var previousMessage = await db.Messages
+                    .Where(m => m.ChatId == chatId && m.Id != messageId)
+                    .OrderByDescending(m => m.TimeSent)
+                    .ThenByDescending(m => m.Id)
+                    .FirstOrDefaultAsync();
+
+                foreach (var member in membersWithThisLastMessage)
+                {
+                    member.LastMessageId = previousMessage?.Id;
+                }
+            }
+
             if (dbMessage.Attachments != null && dbMessage.Attachments.Count > 0)
             {
                 foreach (var attachment in dbMessage.Attachments)

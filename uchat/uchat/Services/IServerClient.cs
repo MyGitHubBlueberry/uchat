@@ -11,7 +11,7 @@ public interface IServerClient
     event Action<Chat>? OnNewChat;
     event Action<GroupChat>? OnNewGroupChat;
     event Action<Message>? OnMessageEdited;
-    event Action<int>? OnMessageDeleted;
+    event Action<int, int>? OnMessageDeleted;
     event Action? OnDisconnected;
     event Action? OnReconnecting;
     event Action? OnReconnected;

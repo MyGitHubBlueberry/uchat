@@ -26,7 +26,7 @@ public class ServerClient : IServerClient
     public event Action<Chat>? OnNewChat;
     public event Action<GroupChat>? OnNewGroupChat;
     public event Action<Message>? OnMessageEdited;
-    public event Action<int>? OnMessageDeleted;
+    public event Action<int, int>? OnMessageDeleted;
     public event Action? OnDisconnected;
     public event Action? OnReconnecting;
     public event Action? OnReconnected;
@@ -388,9 +388,9 @@ public class ServerClient : IServerClient
             OnMessageEdited?.Invoke(message);
         });
 
-        _connection.On<int>("MessageDeleted", (messageId) =>
+        _connection.On<int, int>("MessageDeleted", (messageId, chatId) =>
         {
-            OnMessageDeleted?.Invoke(messageId);
+            OnMessageDeleted?.Invoke(messageId, chatId);
         });
 
         _connection.Closed += error =>
