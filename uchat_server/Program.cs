@@ -68,10 +68,15 @@ class Program
         app.MapOpenApi();
         app.MapScalarApiReference();
 
+        var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        if (!Directory.Exists(wwwrootPath))
+        {
+            Directory.CreateDirectory(wwwrootPath);
+        }
+
         app.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(
-                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
+            FileProvider = new PhysicalFileProvider(wwwrootPath),
             RequestPath = ""
         });
         app.UseCors();
