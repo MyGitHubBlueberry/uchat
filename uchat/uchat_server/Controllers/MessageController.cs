@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SharedLibrary.Models;
+using uchat_server.Files;
 using uchat_server.Hubs;
 using uchat_server.Services;
 
@@ -14,66 +15,56 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
     public async Task<IActionResult> SendMessage([FromForm] string? messageJson, [FromForm] List<IFormFile>? files)
     {
         Message? msg = null;
-        
+
         if (!string.IsNullOrEmpty(messageJson))
         {
             msg = System.Text.Json.JsonSerializer.Deserialize<Message>(messageJson);
         }
-        
-        if (msg == null) return BadRequest("Invalid message format");
 
-        await messageService.SaveMessageAsync(msg, files);
+        if (msg == null) return BadRequest(new { Error = "Invalid message format" });
+
+        try
+        {
+            await messageService.SaveMessageAsync(msg, files);
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
 
         await hubContext.Clients.Group(msg.ChatId.ToString())
             .SendAsync("ReceiveMessage", msg);
 
         Console.WriteLine("Message sent");
 
-        return Ok(new { Status = "Sent", MessageId = msg.Id });
+        return Ok(new { Message = "Sent", MessageId = msg.Id });
     }
 
     [HttpGet("{chatId}")]
-    public async Task<List<Message>> GetMessages(int chatId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 50)
+    public async Task<IActionResult> GetMessages(int chatId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 50)
     {
-        return await messageService.GetChatMessagesDtoAsync(chatId, pageNumber, pageSize);
+        return Ok(await messageService.GetChatMessagesDtoAsync(chatId, pageNumber, pageSize));
     }
 
-    [HttpPost("attachment/{messageId}")]
-    public async Task<IActionResult> AddAttachments(int messageId, [FromForm] params IFormFile[] files) {
-        try {
-            await messageService.AddAttachmentsAsync(messageId, files);
-        } catch (InvalidDataException ex) {
-            return NotFound(ex.Message);
-        }
-        return Ok(new { Status = "Added" });
-    }
-
-    [HttpDelete("attachment/{messageId}")]
-    public async Task<IActionResult> RemoveAttachments(int messageId, [FromQuery] params int[]? idxes) {
-        try {
-            return Ok(new { Status = await messageService
-                    .RemoveAttachmentsAsync(messageId, idxes)
-                    ? "Removed" : "Nothing to remove"
-                });
-        } catch (InvalidDataException ex) {
-            return NotFound(ex.Message);
-        }
-    }
-
-    [HttpPut("{messageId}")]
-    public async Task<IActionResult> EditMessage(int messageId, [FromBody] string newContent)
+    [HttpPatch("text/{messageId}")]
+    public async Task<IActionResult> ChangeMessageText(int messageId, string text)
     {
         try
         {
-            var updatedMessage = await messageService.EditMessageAsync(messageId, newContent);
-            await hubContext.Clients.Group(updatedMessage.ChatId.ToString())
-                .SendAsync("MessageEdited", updatedMessage);
-            return Ok(updatedMessage);
+            await messageService.ChangeMessageTextAsync(messageId, text);
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
+        return Ok(new { Message = "Changed" });
     }
 
     [HttpDelete("{messageId}")]
@@ -89,6 +80,38 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         catch (InvalidDataException ex)
         {
             return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPost("attachment/{messageId}")]
+    public async Task<IActionResult> AddAttachments(int messageId, [FromForm] params IFormFile[] files)
+    {
+        try
+        {
+            await messageService.AddAttachmentsAsync(messageId, files);
+        }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+        return Ok(new { Message = "Added" });
+    }
+
+    [HttpDelete("attachment/{messageId}")]
+    public async Task<IActionResult> RemoveAttachments(int messageId, [FromQuery] params int[]? idxes)
+    {
+        try
+        {
+            return await messageService.RemoveAttachmentsAsync(messageId, idxes)
+                ? Ok(new { Message = "Removed" })
+                : NotFound(new { Message = "Nothing to remove" });
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
         }
     }
 }

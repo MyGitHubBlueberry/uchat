@@ -1,5 +1,15 @@
 namespace uchat_server.Files;
 
+public class InvalidFileFormatException : Exception
+{
+    public InvalidFileFormatException(string? message) : base(message) { }
+}
+
+public class InvalidFileSizeException : Exception
+{
+    public InvalidFileSizeException(string? message) : base(message) { }
+}
+
 public static class FileManager
 {
     public static readonly long AvatarSizeLimit = 10 * 1024 * 1024;
@@ -9,9 +19,9 @@ public static class FileManager
     {
         if (Path.GetExtension(file.FileName).Trim()
                 is not (".png" or ".jpeg" or ".jpg" or ".gif"))
-            throw new InvalidDataException($"This file format is not supported as avatar decoratoin.");
+            throw new InvalidFileFormatException($"This file format is not supported as avatar decoratoin.");
         if (file.Length > AvatarSizeLimit)
-            throw new InvalidDataException("File size is too large.");
+            throw new InvalidFileSizeException("File size is too large.");
 
         return await Save(file, saveFolder);
     }

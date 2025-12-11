@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using uchat_server.Services;
 using uchat_server.Models;
+using uchat_server.Files;
 
 namespace uchat_server.Controllers;
 
@@ -15,6 +16,10 @@ public class UserController(IUserService userService) : ControllerBase
         {
             var response = await userService.RegisterAsync(request);
             return Ok(response);
+        }
+        catch (InvalidDataException ex)
+        {
+            return Forbid(ex.Message);
         }
         catch (Exception ex)
         {
@@ -31,9 +36,17 @@ public class UserController(IUserService userService) : ControllerBase
 
             return Ok(response);
         }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { Error = ex.Message });
+        }
         catch (Exception ex)
         {
-            return Unauthorized(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -45,9 +58,13 @@ public class UserController(IUserService userService) : ControllerBase
             var user = await userService.GetUserByIdAsync(userId);
             return Ok(user);
         }
-        catch (Exception ex)
+        catch (InvalidDataException ex)
         {
             return NotFound(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -61,15 +78,16 @@ public class UserController(IUserService userService) : ControllerBase
         }
         catch (Exception ex)
         {
-            throw new Exception("Error searching users: " + ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
     [HttpPost("picture/{userId}")]
     public async Task<IActionResult> UploadProfilePicture(int userId, [FromForm] IFormFile file)
     {
-        if (file is null || file.Length == 0) {
-            return BadRequest("No file uploaded.");
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { Error = "No file uploaded." });
         }
 
         try
@@ -79,24 +97,37 @@ public class UserController(IUserService userService) : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
+        }
+        catch (Exception ex) when (ex is (InvalidFileSizeException or InvalidFileFormatException))
+        {
+            return Forbid(ex.Message);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "Internal server error: " + ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
+
     }
 
     [HttpDelete("picture/{userId}")]
     public async Task<IActionResult> RemoveProfilePicture(int userId)
     {
-        try {
-            return Ok(await userService.RemoveProfilePicture(userId));
-        } catch (InvalidOperationException ex) {
-            return NotFound(ex.Message);
-        } catch (Exception ex) {
-            return StatusCode(500, "Internal server error: " + ex.Message);
+        try
+        {
+            return await userService.RemoveProfilePicture(userId) 
+                ? Ok(new { Message = "Profile picture removed successfully"})
+                : NotFound(new { Message = "Nothing to remove" });
         }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+
     }
 
     [HttpPut("password/{userId:int}")]
@@ -106,6 +137,14 @@ public class UserController(IUserService userService) : ControllerBase
         {
             await userService.UpdatePasswordAsync(userId, request);
             return Ok(new { Message = "Password updated successfully." });
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -121,6 +160,10 @@ public class UserController(IUserService userService) : ControllerBase
             await userService.DeleteUserAsync(userId);
             return Ok(new { Message = "Account deleted successfully." });
         }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
         catch (Exception ex)
         {
             return BadRequest(new { Error = ex.Message });
@@ -130,18 +173,32 @@ public class UserController(IUserService userService) : ControllerBase
     [HttpPost("{userId}/block/{targetId}")]
     public async Task<IActionResult> BlockUser(int userId, int targetId)
     {
-        try {
+        try
+        {
             await userService.BlockUserAsync(userId, targetId);
             return Ok(new { Message = "User blocked" });
-        } catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+        catch (Exception ex) 
+        { 
+            return BadRequest(new { Error = ex.Message }); 
+        }
     }
 
     [HttpPost("{userId}/unblock/{targetId}")]
     public async Task<IActionResult> UnblockUser(int userId, int targetId)
     {
-        try {
+        try
+        {
             await userService.UnblockUserAsync(userId, targetId);
             return Ok(new { Message = "User unblocked" });
-        } catch (Exception ex) { return BadRequest(new { Error = ex.Message }); }
+        }
+        catch (Exception ex) 
+        { 
+            return BadRequest(new { Error = ex.Message }); 
+        }
     }
 }

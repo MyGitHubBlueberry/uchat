@@ -90,7 +90,7 @@ namespace uchat_server.Services
             DbChat? dbChat = await db.Chats.FindAsync(msg.ChatId);
             if (dbChat is null)
             {
-                throw new Exception($"Can't send message in chat with id '{msg.ChatId}', that doesn't exist.");
+                throw new InvalidDataException($"Can't send message in chat with id '{msg.ChatId}', that doesn't exist.");
             }
 
             byte[] chatKey = await GetChatKeyAsync(msg.ChatId);
@@ -210,6 +210,9 @@ namespace uchat_server.Services
             return true;
         }
 
+        // Fix? if there is a bug with new attachments replacing old ones
+        // try db.Messages.Include(m => m.Attachments)
+        // or do it using db.Attachments directly
         public async Task AddAttachmentsAsync(int messageId, params IFormFile[] files)
         {
             var message = await db.Messages.FindAsync(messageId)

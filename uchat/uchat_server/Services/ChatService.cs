@@ -28,9 +28,9 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         if (sourceUserId == targetUserId)
             throw new InvalidOperationException("sourceUserId and targetUserId should be different");
         DbUser sourceUser = await context.Users.FindAsync(sourceUserId)
-            ?? throw new InvalidOperationException("Can't create chat for user that doesn't exist");
+            ?? throw new InvalidDataException("Can't create chat for user that doesn't exist");
         DbUser targetUser = await context.Users.FindAsync(targetUserId)
-            ?? throw new InvalidOperationException("Can't create chat for user that doesn't exist");
+            ?? throw new InvalidDataException("Can't create chat for user that doesn't exist");
 
         var chatExists = await context.Chats
             .AnyAsync(c => c.OwnerId == null
@@ -63,7 +63,7 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
     public async Task<int> CreateGroupChatAsync(GroupChatCreateRequest groupChat)
     {
         DbUser owner = await context.Users.FindAsync(groupChat.ownerId)
-            ?? throw new Exception("Owner user not found");
+            ?? throw new InvalidDataException("Owner user not found");
 
         if (!groupChat.participants.Contains(owner.Id))
             groupChat.participants.Add(owner.Id);
@@ -88,7 +88,7 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         var dbUsers = await Task.WhenAll(
                 groupChat.participants.Select(async id =>
                     await context.Users.FindAsync(id)
-                    ?? throw new InvalidOperationException("Can't add user that doesn't exist")));
+                    ?? throw new InvalidDataException("Can't add user that doesn't exist")));
 
         dbChat.Members.AddRange(
                 dbUsers
@@ -154,10 +154,10 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
             .ThenInclude(m => m.LastMessage)
             .FirstAsync(c => c.Id == chatId)
             ?? throw new InvalidDataException("Can't get chat that doesn't exist");
-        if (dbChat.OwnerId != null)
-            throw new InvalidOperationException("This chat is group chat");
         var member = dbChat.Members.First(m => m.UserId == userId)
             ?? throw new InvalidDataException("User is not in this chat");
+        if (dbChat.OwnerId != null)
+            throw new InvalidOperationException("This chat is group chat");
         var source = await userService.GetUserByIdAsync(userId);
         var target = await userService.GetUserByIdAsync(dbChat
                 .Members
@@ -273,7 +273,7 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         var chat = await context.Chats
             .Include(c => c.Members)
             .FirstOrDefaultAsync(c => c.Id == chatId)
-            ?? throw new Exception("Chat not found");
+            ?? throw new InvalidDataException("Chat not found");
 
         // Only Group Chats can have new members
         if (chat.OwnerId == null)
@@ -282,7 +282,7 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         }
 
         var user = await context.Users.FindAsync(userId)
-            ?? throw new Exception("User not found");
+            ?? throw new InvalidDataException("User not found");
         if (chat.Members.Any(m => m.UserId == userId))
         {
             throw new InvalidOperationException("User is already a member of this chat.");
@@ -383,8 +383,8 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
 
     public async Task<List<ChatMemberDto>> GetChatMembersAsync(int chatId)
     {
-        bool exists = await context.Chats.AnyAsync(c => c.Id == chatId);
-        if (!exists) throw new Exception("Chat not found");
+        if (!context.Chats.Any(c => c.Id == chatId))
+            throw new InvalidDataException("Chat not found");
 
         return await context.ChatMembers
             .Where(m => m.ChatId == chatId)

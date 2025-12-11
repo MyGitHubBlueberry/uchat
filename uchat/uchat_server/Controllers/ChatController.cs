@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using uchat_server.Services;
 using uchat_server.Models;
 using uchat_server.Hubs;
+using uchat_server.Files;
 
 namespace uchat_server.Controllers;
 
@@ -16,18 +17,22 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         try
         {
             var newChatId = await chatService.CreateChatAsync(sourceUserId, targetUserId);
-            
+
             var chat = await chatService.GetChatByIdAsync(newChatId, sourceUserId);
             var chatForTarget = await chatService.GetChatByIdAsync(newChatId, targetUserId);
-            
+
             await hubContext.Clients.Group($"user_{sourceUserId}").SendAsync("NewChat", chat);
             await hubContext.Clients.Group($"user_{targetUserId}").SendAsync("NewChat", chatForTarget);
-            
+
             return Ok(newChatId);
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -37,66 +42,94 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         try
         {
             var newChatId = await chatService.CreateGroupChatAsync(chat);
-            
+
             var groupChatsForMembers = await chatService.GetGroupChatForAllMembersAsync(newChatId);
-            
+
             foreach (var kvp in groupChatsForMembers)
             {
                 await hubContext.Clients.Group($"user_{kvp.Key}").SendAsync("NewGroupChat", kvp.Value);
             }
-            
+
             return Ok(newChatId);
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
     [HttpDelete("{chatId}")]
-    public async Task<IActionResult> DeleteChat(int chatId, [FromQuery] int userId) 
+    public async Task<IActionResult> DeleteChat(int chatId)
     {
-        try 
+        try
         {
-            bool deleted = await chatService.DeleteChatAsync(chatId, userId);
-            
-            if (deleted) return Ok(new { Message = "Chat deleted successfully" });
-            return NotFound("Chat not found");
-        } 
-        catch (Exception ex) 
+            return await chatService.DeleteChatAsync(chatId)
+                ? Ok(new { Message = "Chat deleted successfully" })
+                : NotFound(new { Message = "Chat doesn't exist" });
+        }
+        catch (Exception ex)
         {
             return BadRequest(new { Error = ex.Message });
         }
     }
 
     [HttpGet("chat/{chatId}-{userId}")]
-    public IActionResult GetChatById(int chatId, int userId) {
-        try {
-            return Ok(chatService.GetChatByIdAsync(chatId, userId));
-        } catch (Exception ex) {
-            return BadRequest(ex.Message);
+    public async Task<IActionResult> GetChatById(int chatId, int userId)
+    {
+        try
+        {
+            return Ok(await chatService.GetChatByIdAsync(chatId, userId));
+        }
+        catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
+        {
+            return NotFound(new { Error = e.Message });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Error = e.Message });
         }
     }
 
     [HttpGet("groupChat/{chatId}-{userId}")]
-    public IActionResult GetGroupChatById(int chatId, int userId) {
-        try {
-            return Ok(chatService.GetGroupChatByIdAsync(chatId, userId));
-        } catch (Exception ex) {
-            return BadRequest(ex.Message);
+    public async Task<IActionResult> GetGroupChatById(int chatId, int userId)
+    {
+        try
+        {
+            return Ok(await chatService.GetGroupChatByIdAsync(chatId, userId));
+        }
+        catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
+        {
+            return NotFound(new { Error = e.Message });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Error = e.Message });
         }
     }
 
     [HttpGet("{userId}/chats")]
-    public async Task<IActionResult> GetUserChats(int userId) {
-        try {
+    public async Task<IActionResult> GetUserChats(int userId)
+    {
+        try
+        {
             var test = await chatService.GetUserChatsAsync(userId);
-            return Ok(new {
-                    Chats = test.Item1,
-                    GroupChats = test.Item2,
-                    });
-        } catch (Exception ex) {
-            return BadRequest(ex.Message);
+            return Ok(new
+            {
+                Chats = test.Item1,
+                GroupChats = test.Item2,
+            });
+        }
+        catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
+        {
+            return NotFound(new { Error = e.Message });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Error = e.Message });
         }
     }
 
@@ -107,6 +140,10 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         {
             var members = await chatService.GetChatMembersAsync(chatId);
             return Ok(members);
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -122,12 +159,16 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
             await chatService.AddChatMemberAsync(chatId, userId);
             return Ok(new { Message = "Member added successfully" });
         }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
         catch (Exception ex)
         {
             return BadRequest(new { Error = ex.Message });
         }
     }
-    
+
     [HttpDelete("{chatId}/members/{userId}")]
     public async Task<IActionResult> RemoveMember(int chatId, int userId)
     {
@@ -150,31 +191,45 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
     }
 
     [HttpPost("groupChat/avatar/{chatId}")]
-    public async Task<IActionResult> UploadGroupChatAvatar(int chatId, [FromForm]IFormFile file) {
-        if (file is null || file.Length == 0) {
-            return BadRequest("No file uploaded.");
+    public async Task<IActionResult> UploadGroupChatAvatar(int chatId, [FromForm] IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { Error = "No file uploaded." });
         }
 
-        try {
+        try
+        {
             await chatService.UploadAvatarAsync(chatId, file);
-            return Ok(new { Message = "Avatar uploaded successfully"});
-        } catch (InvalidDataException ex) {
-            return NotFound(ex.Message);
-        } catch (Exception ex) {
-            return BadRequest(ex.Message);
+            return Ok(new { Message = "Avatar uploaded successfully" });
+        }
+        catch (InvalidDataException ex)
+        {
+            return NotFound(new { Error = ex.Message });
+        }
+        catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
     [HttpDelete("groupChat/avatar/{chatId}")]
-    public async Task<IActionResult> RemoveGroupChatAvatar(int chatId) {
-        try {
+    public async Task<IActionResult> RemoveGroupChatAvatar(int chatId)
+    {
+        try
+        {
             return Ok(await chatService.RemoveGroupChatAvatarAsync(chatId));
-        } catch (InvalidOperationException ex) {
-            return NotFound(ex.Message);
-        } catch (InvalidDataException ex) {
-            return NotFound(ex.Message);
-        } catch (Exception ex) {
-            return StatusCode(500, "Internal server error: " + ex.Message);
+        }
+        catch (InvalidDataException e)
+        {
+            return NotFound(new { Error = e.Message });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Error = e.Message });
         }
     }
 
