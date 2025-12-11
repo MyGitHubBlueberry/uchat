@@ -12,6 +12,10 @@ public interface IServerClient
     event Action<GroupChat>? OnNewGroupChat;
     event Action<Message>? OnMessageEdited;
     event Action<int, int>? OnMessageDeleted;
+    event Action<GroupChat>? OnGroupChatUpdated;
+    event Action<int, int>? OnMemberAddedToGroup;
+    event Action<int, int>? OnMemberRemovedFromGroup;
+    event Action<int>? OnGroupChatDeleted;
     event Action? OnDisconnected;
     event Action? OnReconnecting;
     event Action? OnReconnected;
@@ -36,4 +40,18 @@ public interface IServerClient
     Task<bool> DeleteAccount(int userId);
     Task<bool> LogoutAccount(int userId);
     Task<List<User>> SearchUsers(string partialName);
+    Task<List<ChatMemberDto>> GetChatMembers(int chatId);
+    Task AddChatMember(int chatId, int userId);
+    Task<bool> RemoveChatMember(int chatId, int userId);
+    Task<bool> IsOwnerOfChat(int chatId, int userId);
+    Task<bool> IsMemberOfChat(int chatId, int userId);
+}
+
+public class ChatMemberDto
+{
+    public int UserId { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
+    public bool IsAdmin { get; set; }
+    public bool IsMuted { get; set; }
 }

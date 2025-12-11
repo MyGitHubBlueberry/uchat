@@ -313,6 +313,12 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
         
         if (chat == null) return false;
 
+        if (memberToRemove.LastMessageId != null)
+        {
+            memberToRemove.LastMessageId = null;
+            await context.SaveChangesAsync();
+        }
+
         if (chat.OwnerId == userId)
         {
             var successor = chat.Members
@@ -324,6 +330,15 @@ public class ChatService(AppDbContext context, IConfiguration configuration, IUs
             {
                 // --- SCENARIO 1: LAST PERSON LEFT ---
                 // No successor found. Delete everything.
+                
+                foreach (var member in chat.Members)
+                {
+                    member.LastMessageId = null;
+                }
+                await context.SaveChangesAsync();
+                
+                var messages = await context.Messages.Where(m => m.ChatId == chatId).ToListAsync();
+                context.Messages.RemoveRange(messages);
                 
                 context.ChatMembers.Remove(memberToRemove);
                 context.Chats.Remove(chat);

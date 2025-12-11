@@ -17,9 +17,8 @@ namespace uchat_server.Services
 
         private async Task<byte[]> GetChatKeyAsync(int chatId)
         {
-
             var chat = await db.Chats.FindAsync(chatId);
-            if (chat == null) throw new Exception("Chat not found");
+            if (chat == null) throw new InvalidDataException("Chat not found");
 
             var keyPackage = new EncryptedMessage(chat.EncryptedKey, chat.KeyIV);
 

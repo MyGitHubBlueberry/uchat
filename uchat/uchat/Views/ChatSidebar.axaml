@@ -113,8 +113,29 @@
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding Chats}" Margin="10">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <controls:ChatListItem Tapped="OnChatTapped"/>
+                        <DataTemplate x:DataType="vm:IChatItemViewModel">
+                            <Border>
+                                <controls:ChatListItem Tapped="OnChatTapped">
+                                    <controls:ChatListItem.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Leave Group" 
+                                                      Command="{Binding LeaveGroupCommand}"
+                                                      CommandParameter="{Binding}"
+                                                      IsVisible="{Binding CanLeave}"/>
+                                            
+                                            <MenuItem Header="Group Settings" 
+                                                      Command="{Binding OpenGroupSettingsCommand}"
+                                                      CommandParameter="{Binding}"
+                                                      IsVisible="{Binding IsOwner}"/>
+                                            
+                                            <MenuItem Header="Delete Group" 
+                                                      Command="{Binding DeleteGroupCommand}"
+                                                      CommandParameter="{Binding}"
+                                                      IsVisible="{Binding IsOwner}"/>
+                                        </ContextMenu>
+                                    </controls:ChatListItem.ContextMenu>
+                                </controls:ChatListItem>
+                            </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

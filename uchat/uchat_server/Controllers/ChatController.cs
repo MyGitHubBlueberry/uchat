@@ -67,9 +67,15 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
     {
         try
         {
-            return await chatService.DeleteChatAsync(chatId, userId)
-                ? Ok(new { Message = "Chat deleted successfully" })
-                : NotFound(new { Message = "Chat doesn't exist" });
+            var result = await chatService.DeleteChatAsync(chatId, userId);
+            
+            if (result)
+            {
+                await hubContext.Clients.Group(chatId.ToString()).SendAsync("GroupChatDeleted", chatId);
+                return Ok(new { Message = "Chat deleted successfully" });
+            }
+            
+            return NotFound(new { Message = "Chat doesn't exist" });
         }
         catch (Exception ex)
         {
@@ -157,6 +163,12 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         try
         {
             await chatService.AddChatMemberAsync(chatId, userId);
+            
+            await hubContext.Clients.Group(chatId.ToString()).SendAsync("MemberAddedToGroup", chatId, userId);
+            
+            var groupChat = await chatService.GetGroupChatByIdAsync(chatId, userId);
+            await hubContext.Clients.Group($"user_{userId}").SendAsync("NewGroupChat", groupChat);
+            
             return Ok(new { Message = "Member added successfully" });
         }
         catch (InvalidDataException ex)
@@ -177,6 +189,8 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
             bool success = await chatService.RemoveChatMemberAsync(chatId, userId);
             if (success)
             {
+                await hubContext.Clients.Group(chatId.ToString()).SendAsync("MemberRemovedFromGroup", chatId, userId);
+                
                 return Ok(new { Message = "Member removed successfully" });
             }
             else
@@ -184,9 +198,13 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
                 return NotFound(new { Error = "Member not found in this chat" });
             }
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Error = ex.Message });
         }
     }
 
@@ -267,6 +285,13 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         try
         {
             await chatService.UpdateGroupChatAsync(chatId, userId, request);
+            
+            var groupChatsForMembers = await chatService.GetGroupChatForAllMembersAsync(chatId);
+            foreach (var kvp in groupChatsForMembers)
+            {
+                await hubContext.Clients.Group($"user_{kvp.Key}").SendAsync("GroupChatUpdated", kvp.Value);
+            }
+            
             return Ok(new { Message = "Group info updated successfully" });
         }
         catch (Exception ex)

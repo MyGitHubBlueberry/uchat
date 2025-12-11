@@ -27,6 +27,10 @@ public class ServerClient : IServerClient
     public event Action<GroupChat>? OnNewGroupChat;
     public event Action<Message>? OnMessageEdited;
     public event Action<int, int>? OnMessageDeleted;
+    public event Action<GroupChat>? OnGroupChatUpdated;
+    public event Action<int, int>? OnMemberAddedToGroup;
+    public event Action<int, int>? OnMemberRemovedFromGroup;
+    public event Action<int>? OnGroupChatDeleted;
     public event Action? OnDisconnected;
     public event Action? OnReconnecting;
     public event Action? OnReconnected;
@@ -212,7 +216,8 @@ public class ServerClient : IServerClient
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception("Error fetching messages");
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error fetching messages: {response.StatusCode} - {errorContent}");
         }
 
         var result = await response.Content.ReadFromJsonAsync<List<Message>>();
@@ -396,6 +401,27 @@ public class ServerClient : IServerClient
             OnMessageDeleted?.Invoke(messageId, chatId);
         });
 
+        _connection.On<GroupChat>("GroupChatUpdated", (groupChat) =>
+        {
+            OnGroupChatUpdated?.Invoke(groupChat);
+        });
+
+        _connection.On<int, int>("MemberAddedToGroup", (chatId, userId) =>
+        {
+            OnMemberAddedToGroup?.Invoke(chatId, userId);
+        });
+
+        _connection.On<int, int>("MemberRemovedFromGroup", (chatId, userId) =>
+        {
+            OnMemberRemovedFromGroup?.Invoke(chatId, userId);
+        });
+
+        _connection.On<int>("GroupChatDeleted", (chatId) =>
+        {
+            Console.WriteLine($"SignalR: Group chat {chatId} deleted");
+            OnGroupChatDeleted?.Invoke(chatId);
+        });
+
         _connection.Closed += error =>
         {
             Console.WriteLine($"Connection closed: {error?.Message}");
@@ -541,5 +567,68 @@ public class ServerClient : IServerClient
 
         var result = await response.Content.ReadFromJsonAsync<List<User>>();
         return result ?? [];
+    }
+
+    public async Task<List<ChatMemberDto>> GetChatMembers(int chatId)
+    {
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat/{chatId}/members");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Error fetching chat members: {response.StatusCode}");
+        }
+
+        var members = await response.Content.ReadFromJsonAsync<List<ChatMemberDto>>();
+        return members ?? [];
+    }
+
+    public async Task AddChatMember(int chatId, int userId)
+    {
+        var response = await _httpClient.PostAsync($"{_serverUrl}/api/chat/{chatId}/members/{userId}", null);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error adding member: {response.StatusCode} - {errorContent}");
+        }
+    }
+
+    public async Task<bool> RemoveChatMember(int chatId, int userId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_serverUrl}/api/chat/{chatId}/members/{userId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error removing member: {response.StatusCode} - {errorContent}");
+        }
+
+        return true;
+    }
+
+    public async Task<bool> IsOwnerOfChat(int chatId, int userId)
+    {
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat/{chatId}/isOwner/{userId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var isOwner = await response.Content.ReadFromJsonAsync<bool>();
+        return isOwner;
+    }
+
+    public async Task<bool> IsMemberOfChat(int chatId, int userId)
+    {
+        var response = await _httpClient.GetAsync($"{_serverUrl}/api/chat/{chatId}/isMember/{userId}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var isMember = await response.Content.ReadFromJsonAsync<bool>();
+        return isMember;
     }
 }

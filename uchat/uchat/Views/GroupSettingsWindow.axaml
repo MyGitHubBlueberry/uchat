@@ -1,0 +1,196 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:uchat.ViewModels"
+        xmlns:controls="using:uchat.Views.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="700"
+        x:Class="uchat.Views.GroupSettingsWindow"
+        x:DataType="vm:GroupSettingsViewModel"
+        Title="Group Settings"
+        Width="500" Height="650"
+        MinWidth="400" MinHeight="500"
+        Background="#17212b"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+        <TextBlock Grid.Row="0"
+                   Text="Group Settings"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,20"/>
+        
+        <StackPanel Grid.Row="1" Spacing="15">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Group Name"
+                           Foreground="#B9BCC1"
+                           FontSize="12"
+                           FontWeight="SemiBold"/>
+                <controls:StyledInputBase BackgroundColor="#2F3136"
+                                          CornerRadiusValue="5"
+                                          PaddingValue="10">
+                    <TextBox Text="{Binding GroupName}"
+                             IsEnabled="{Binding IsOwner}"
+                             Watermark="Enter group name..."
+                             Foreground="White"
+                             FontSize="14"/>
+                </controls:StyledInputBase>
+            </StackPanel>
+            
+            <StackPanel Spacing="5">
+                <TextBlock Text="Description (Optional)"
+                           Foreground="#B9BCC1"
+                           FontSize="12"
+                           FontWeight="SemiBold"/>
+                <controls:StyledInputBase BackgroundColor="#2F3136"
+                                          CornerRadiusValue="5"
+                                          PaddingValue="10">
+                    <TextBox Text="{Binding GroupDescription}"
+                             IsEnabled="{Binding IsOwner}"
+                             Watermark="Enter group description..."
+                             Foreground="White"
+                             FontSize="14"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             Height="60"/>
+                </controls:StyledInputBase>
+            </StackPanel>
+            
+            <Button Content="Save Changes" 
+                    Command="{Binding SaveChangesCommand}"
+                    IsVisible="{Binding IsOwner}"
+                    HorizontalAlignment="Left"
+                    Background="#5865F2"
+                    Foreground="White"
+                    Padding="15,8"
+                    CornerRadius="5"
+                    BorderThickness="0"
+                    Cursor="Hand">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="#4752C4"/>
+                    </Style>
+                </Button.Styles>
+            </Button>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2" 
+                      Margin="0,20,0,0"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Members"
+                               Foreground="#B9BCC1"
+                               FontSize="12"
+                               FontWeight="SemiBold"/>
+                    
+                    <Border Background="#2F3136"
+                            CornerRadius="5"
+                            Padding="10">
+                        <ItemsControl ItemsSource="{Binding Members}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:GroupMemberViewModel">
+                                    <Border BorderBrush="#17212b" 
+                                            BorderThickness="0,0,0,1" 
+                                            Padding="10,8"
+                                            Margin="0,2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0" Spacing="3">
+                                                <TextBlock Text="{Binding UserName}" 
+                                                           FontWeight="Medium"
+                                                           Foreground="White"/>
+                                                <TextBlock Text="Owner" 
+                                                           FontSize="11" 
+                                                           Foreground="#5865F2"
+                                                           IsVisible="{Binding IsOwner}"/>
+                                            </StackPanel>
+                                            
+                                            <Button Grid.Column="1"
+                                                    Content="Remove"
+                                                    Command="{Binding $parent[Window].((vm:GroupSettingsViewModel)DataContext).RemoveMemberCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding CanRemove}"
+                                                    Background="#ED4245"
+                                                    Foreground="White"
+                                                    Padding="10,5"
+                                                    CornerRadius="3"
+                                                    BorderThickness="0"
+                                                    Cursor="Hand">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover">
+                                                        <Setter Property="Background" Value="#C03739"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10" IsVisible="{Binding IsOwner}">
+                    <TextBlock Text="Add Members"
+                               Foreground="#B9BCC1"
+                               FontSize="12"
+                               FontWeight="SemiBold"/>
+                    
+                    <Border Background="#2F3136"
+                            CornerRadius="5"
+                            Padding="10"
+                            MaxHeight="200">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding AvailableUsers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SelectableUser">
+                                        <CheckBox Content="{Binding User.Name}" 
+                                                  IsChecked="{Binding IsSelected}"
+                                                  Foreground="White"
+                                                  Margin="5"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    
+                    <Button Content="Add Selected Members" 
+                            Command="{Binding AddSelectedMembersCommand}"
+                            HorizontalAlignment="Left"
+                            Background="#5865F2"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="5"
+                            BorderThickness="0"
+                            Cursor="Hand">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#4752C4"/>
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button Grid.Row="3" 
+                Content="Close" 
+                HorizontalAlignment="Right"
+                Click="CloseButton_Click"
+                Margin="0,20,0,0"
+                Background="#2F3136"
+                Foreground="White"
+                Padding="15,8"
+                CornerRadius="5"
+                BorderThickness="0"
+                Cursor="Hand">
+            <Button.Styles>
+                <Style Selector="Button:pointerover">
+                    <Setter Property="Background" Value="#23272A"/>
+                </Style>
+            </Button.Styles>
+        </Button>
+    </Grid>
+</Window>

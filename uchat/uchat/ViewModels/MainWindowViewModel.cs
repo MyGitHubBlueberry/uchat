@@ -51,6 +51,10 @@ public partial class MainWindowViewModel : ViewModelBase
         _serverClient.OnNewGroupChat += OnNewGroupChat;
         _serverClient.OnMessageEdited += OnMessageEdited;
         _serverClient.OnMessageDeleted += OnMessageDeleted;
+        _serverClient.OnGroupChatUpdated += OnGroupChatUpdated;
+        _serverClient.OnMemberAddedToGroup += OnMemberAddedToGroup;
+        _serverClient.OnMemberRemovedFromGroup += OnMemberRemovedFromGroup;
+        _serverClient.OnGroupChatDeleted += OnGroupChatDeleted;
         _serverClient.OnReconnecting += OnReconnecting;
         _serverClient.OnReconnected += OnReconnected;
 
@@ -301,7 +305,11 @@ public partial class MainWindowViewModel : ViewModelBase
         
         foreach (var groupChat in groupChats)
         {
-            Chats.Add(new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id));
+            var groupChatViewModel = new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id);
+            groupChatViewModel.LeaveGroupCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await LeaveGroup(vm));
+            groupChatViewModel.DeleteGroupCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await DeleteGroup(vm));
+            groupChatViewModel.OpenGroupSettingsCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await OpenGroupSettings(vm));
+            Chats.Add(groupChatViewModel);
         }
     }
     
@@ -377,7 +385,95 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (!Chats.Any(c => c.ChatId == groupChat.id))
             {
-                Chats.Add(new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id));
+                var groupChatViewModel = new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id);
+                groupChatViewModel.LeaveGroupCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await LeaveGroup(vm));
+                groupChatViewModel.DeleteGroupCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await DeleteGroup(vm));
+                groupChatViewModel.OpenGroupSettingsCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await OpenGroupSettings(vm));
+                Chats.Add(groupChatViewModel);
+            }
+        });
+    }
+
+    private void OnGroupChatUpdated(GroupChat groupChat)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var existingGroup = Chats.OfType<GroupChatViewModel>().FirstOrDefault(c => c.ChatId == groupChat.id);
+            if (existingGroup != null)
+            {
+                var index = Chats.IndexOf(existingGroup);
+                var isSelected = existingGroup.IsSelected;
+                var lastMessage = existingGroup.LastMessagePreview;
+                
+                var updatedGroup = new GroupChatViewModel(groupChat, _userSession.CurrentUser!.Id);
+                updatedGroup.LeaveGroupCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await LeaveGroup(vm));
+                updatedGroup.DeleteGroupCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await DeleteGroup(vm));
+                updatedGroup.OpenGroupSettingsCommand = new RelayCommand<GroupChatViewModel>(async (vm) => await OpenGroupSettings(vm));
+                updatedGroup.IsSelected = isSelected;
+                updatedGroup.LastMessagePreview = lastMessage;
+                
+                Chats[index] = updatedGroup;
+                
+                if (isSelected)
+                {
+                    SelectedChat = updatedGroup;
+                }
+            }
+        });
+    }
+
+    private void OnMemberAddedToGroup(int chatId, int userId)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Console.WriteLine($"Member {userId} added to group {chatId}");
+        });
+    }
+
+    private void OnMemberRemovedFromGroup(int chatId, int userId)
+    {
+        Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            if (userId == _userSession.CurrentUser?.Id)
+            {
+                var groupToRemove = Chats.FirstOrDefault(c => c.ChatId == chatId);
+                if (groupToRemove != null)
+                {
+                    // Leave the SignalR group to stop receiving updates
+                    try
+                    {
+                        await _serverClient.LeaveChatGroup(chatId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error leaving chat group: {ex.Message}");
+                    }
+                    
+                    if (SelectedChat == groupToRemove)
+                    {
+                        SelectedChat = null;
+                        Messages.Clear();
+                    }
+                    Chats.Remove(groupToRemove);
+                }
+            }
+        });
+    }
+
+    private void OnGroupChatDeleted(int chatId)
+    {
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var groupToRemove = Chats.FirstOrDefault(c => c.ChatId == chatId);
+            if (groupToRemove != null)
+            {
+                if (SelectedChat == groupToRemove)
+                {
+                    SelectedChat = null;
+                    Messages.Clear();
+                }
+                Chats.Remove(groupToRemove);
+                Console.WriteLine($"Group chat {chatId} removed from list");
             }
         });
     }
@@ -668,7 +764,24 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             RemoveLocalChats();
             SelectedChat = chatViewModel;
-            await GetChatHistory();
+            
+            try
+            {
+                await GetChatHistory();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading chat history: {ex.Message}");
+                Messages.Clear();
+                
+                // If chat no longer exists, remove it from the list
+                if (ex.Message.Contains("Chat not found", StringComparison.OrdinalIgnoreCase))
+                {
+                    Chats.Remove(chatViewModel);
+                    SelectedChat = null;
+                    return;
+                }
+            }
             
             List<int> memberIds;
             if (chatViewModel is ChatViewModel chat)
@@ -696,6 +809,80 @@ public partial class MainWindowViewModel : ViewModelBase
             if (Chats[i].ChatId == -1)
             {
                 Chats.RemoveAt(i);
+            }
+        }
+    }
+
+    private async Task LeaveGroup(GroupChatViewModel? groupChatViewModel)
+    {
+        if (groupChatViewModel == null || groupChatViewModel.IsOwner) return;
+
+        try
+        {
+            // Leave the SignalR group first to stop receiving messages
+            await _serverClient.LeaveChatGroup(groupChatViewModel.ChatId);
+            
+            // Clear UI first
+            if (SelectedChat == groupChatViewModel)
+            {
+                SelectedChat = null;
+                Messages.Clear();
+            }
+            Chats.Remove(groupChatViewModel);
+            
+            // Then remove from server (might delete the chat if last member)
+            await _serverClient.RemoveChatMember(groupChatViewModel.ChatId, _userSession.CurrentUser!.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error leaving group: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteGroup(GroupChatViewModel? groupChatViewModel)
+    {
+        if (groupChatViewModel == null || !groupChatViewModel.IsOwner) return;
+
+        try
+        {
+            await _serverClient.DeleteChat(groupChatViewModel.ChatId, _userSession.CurrentUser!.Id);
+            
+            if (SelectedChat == groupChatViewModel)
+            {
+                SelectedChat = null;
+                Messages.Clear();
+            }
+            
+            Chats.Remove(groupChatViewModel);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting group: {ex.Message}");
+        }
+    }
+
+    private async Task OpenGroupSettings(GroupChatViewModel? groupChatViewModel)
+    {
+        if (groupChatViewModel == null || !groupChatViewModel.IsOwner) return;
+
+        var groupSettingsViewModel = new GroupSettingsViewModel(_serverClient, groupChatViewModel.GroupChat, _userSession.CurrentUser!.Id);
+        var groupSettingsWindow = new Views.GroupSettingsWindow
+        {
+            DataContext = groupSettingsViewModel
+        };
+        
+        var topLevel = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = topLevel?.MainWindow;
+        
+        if (mainWindow != null)
+        {
+            await groupSettingsWindow.ShowDialog(mainWindow);
+            await LoadChats();
+            
+            var updatedGroup = Chats.OfType<GroupChatViewModel>().FirstOrDefault(g => g.ChatId == groupChatViewModel.ChatId);
+            if (updatedGroup != null && SelectedChat?.ChatId == groupChatViewModel.ChatId)
+            {
+                SelectedChat = updatedGroup;
             }
         }
     }

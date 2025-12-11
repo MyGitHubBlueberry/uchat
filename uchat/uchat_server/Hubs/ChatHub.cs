@@ -49,7 +49,7 @@ public class ChatHub : Hub
                 List<string> connectionIdsCopy;
                 lock (connectionIds)
                 {
-                    connectionIdsCopy = new List<string>(connectionIds);
+                    connectionIdsCopy = [.. connectionIds];
                 }
 
                 foreach (var connId in connectionIdsCopy)
@@ -86,6 +86,60 @@ public class ChatHub : Hub
     {
         await Clients.Group(chatId.ToString()).SendAsync("MessageDeleted", messageId);
         Console.WriteLine($"Message {messageId} deleted from chat {chatId}");
+    }
+
+    public async Task NotifyGroupChatUpdated(GroupChat groupChat)
+    {
+        await Clients.Group(groupChat.id.ToString()).SendAsync("GroupChatUpdated", groupChat);
+        Console.WriteLine($"Group chat {groupChat.id} updated: {groupChat.name}");
+    }
+
+    public async Task NotifyMemberAdded(int chatId, int userId)
+    {
+        await Clients.Group(chatId.ToString()).SendAsync("MemberAddedToGroup", chatId, userId);
+        
+        if (_connectedUsers.TryGetValue(userId, out var connectionIds))
+        {
+            List<string> connectionIdsCopy;
+            lock (connectionIds)
+            {
+                connectionIdsCopy = [.. connectionIds];
+            }
+
+            foreach (var connId in connectionIdsCopy)
+            {
+                await Groups.AddToGroupAsync(connId, chatId.ToString());
+            }
+        }
+        
+        Console.WriteLine($"Member {userId} added to group chat {chatId}");
+    }
+
+    public async Task NotifyMemberRemoved(int chatId, int userId)
+    {
+        await Clients.Group(chatId.ToString()).SendAsync("MemberRemovedFromGroup", chatId, userId);
+        
+        if (_connectedUsers.TryGetValue(userId, out var connectionIds))
+        {
+            List<string> connectionIdsCopy;
+            lock (connectionIds)
+            {
+                connectionIdsCopy = [.. connectionIds];
+            }
+
+            foreach (var connId in connectionIdsCopy)
+            {
+                await Groups.RemoveFromGroupAsync(connId, chatId.ToString());
+            }
+        }
+        
+        Console.WriteLine($"Member {userId} removed from group chat {chatId}");
+    }
+
+    public async Task NotifyGroupDeleted(int chatId)
+    {
+        await Clients.Group(chatId.ToString()).SendAsync("GroupChatDeleted", chatId);
+        Console.WriteLine($"Group chat {chatId} deleted");
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
