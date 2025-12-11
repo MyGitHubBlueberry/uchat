@@ -2,7 +2,7 @@
 ## Build:
 In foler with solution:
 ```bash
-dotnet build uchat.sln -m Release
+dotnet build uchat.sln -c Release -m
 ```
 
 # Client
