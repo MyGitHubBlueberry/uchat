@@ -5,14 +5,18 @@ using uchat_server.Args;
 using Scalar.AspNetCore;
 using uchat_server.Services;
 using System.Diagnostics;
+using Microsoft.Extensions.FileProviders;
 
-class Program {
-    static void Main(string[] args) {
+class Program
+{
+    static void Main(string[] args)
+    {
         int port;
         bool isDeamon;
 
         if (!Parser.Parse(args, out port, out isDeamon)) return;
-        if (isDeamon) {
+        if (isDeamon)
+        {
             RunAsDeamon(args);
             return;
         }
@@ -64,7 +68,12 @@ class Program {
         app.MapOpenApi();
         app.MapScalarApiReference();
 
-        app.UseStaticFiles();
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(
+                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
+            RequestPath = ""
+        });
         app.UseCors();
         app.MapHub<ChatHub>("/chatHub");
         app.MapControllers();
@@ -73,21 +82,23 @@ class Program {
 
         app.Run($"http://localhost:{port}");
     }
-    
-    static void RunAsDeamon(string[] args) {
-            var newArgs = args.Where(x => x != "-d" && x != "--daemon");
-            
-            var psi = new ProcessStartInfo
-            {
-                FileName = Environment.ProcessPath,
-                Arguments = string.Join(" ", newArgs),
-                UseShellExecute = true, //todo try false
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
+
+    static void RunAsDeamon(string[] args)
+    {
+        var newArgs = args.Where(x => x != "-d" && x != "--daemon");
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = Environment.ProcessPath,
+            Arguments = string.Join(" ", newArgs),
+            UseShellExecute = true, //todo try false
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
+        };
 
         var p = Process.Start(psi);
-        if (p is null) {
+        if (p is null)
+        {
             Console.WriteLine("Failed to start server as daemon");
             return;
         }
