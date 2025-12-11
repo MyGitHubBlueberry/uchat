@@ -28,11 +28,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -54,11 +54,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -73,7 +73,7 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -86,11 +86,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
         {
-            return NotFound(e.Message);
+            return NotFound(new { Error = e.Message });
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest(new { Error = e.Message });
         }
     }
 
@@ -103,11 +103,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
         {
-            return NotFound(e.Message);
+            return NotFound(new { Error = e.Message });
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest(new { Error = e.Message });
         }
     }
 
@@ -125,11 +125,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (Exception e) when(e is (InvalidDataException or InvalidOperationException))
         {
-            return NotFound(e.Message);
+            return NotFound(new { Error = e.Message });
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest(new { Error = e.Message });
         }
     }
 
@@ -143,7 +143,7 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -161,7 +161,7 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -195,7 +195,7 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
     {
         if (file is null || file.Length == 0)
         {
-            return BadRequest("No file uploaded.");
+            return BadRequest(new { Error = "No file uploaded." });
         }
 
         try
@@ -205,14 +205,14 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
             return Forbid(ex.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
     }
 
@@ -225,11 +225,11 @@ public class ChatController(IChatService chatService, IHubContext<ChatHub> hubCo
         }
         catch (InvalidDataException e)
         {
-            return NotFound(e.Message);
+            return NotFound(new { Error = e.Message });
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            return BadRequest(new { Error = e.Message });
         }
     }
 

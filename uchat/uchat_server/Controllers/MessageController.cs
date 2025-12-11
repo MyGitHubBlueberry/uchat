@@ -21,7 +21,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
             msg = System.Text.Json.JsonSerializer.Deserialize<Message>(messageJson);
         }
 
-        if (msg == null) return BadRequest("Invalid message format");
+        if (msg == null) return BadRequest(new { Error = "Invalid message format" });
 
         try
         {
@@ -29,14 +29,14 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
         catch (Exception ex) when(ex is (InvalidFileSizeException or InvalidFileFormatException)) {
             return Forbid(ex.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { Error = ex.Message });
         }
 
         await hubContext.Clients.Group(msg.ChatId.ToString())
@@ -44,7 +44,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
 
         Console.WriteLine("Message sent");
 
-        return Ok(new { Status = "Sent", MessageId = msg.Id });
+        return Ok(new { Message = "Sent", MessageId = msg.Id });
     }
 
     [HttpGet("{chatId}")]
@@ -62,9 +62,9 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
-        return Ok(new { Status = "Changed" });
+        return Ok(new { Message = "Changed" });
     }
 
     [HttpPost("attachment/{messageId}")]
@@ -79,9 +79,9 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
-        return Ok(new { Status = "Added" });
+        return Ok(new { Message = "Added" });
     }
 
     [HttpDelete("attachment/{messageId}")]
@@ -95,7 +95,7 @@ public class MessageController(IHubContext<ChatHub> hubContext, IMessageService 
         }
         catch (InvalidDataException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { Error = ex.Message });
         }
     }
 }
