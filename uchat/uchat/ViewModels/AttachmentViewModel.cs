@@ -18,9 +18,9 @@ public class AttachmentViewModel
     }
 
     public int Id => _attachment.Id;
-    
+
     public string Url => _attachment.Url;
-    
+
     public Task<Bitmap?> Image { get; }
 
     private async Task<Bitmap?> LoadImageAsync()
@@ -28,7 +28,7 @@ public class AttachmentViewModel
         try
         {
             var url = ServerConfig.GetAttachmentUrl(_attachment.Url);
-
+            Console.WriteLine(url);
             var response = await ServerConfig.HttpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
             var data = await response.Content.ReadAsByteArrayAsync();
