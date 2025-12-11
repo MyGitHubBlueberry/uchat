@@ -24,6 +24,3 @@ wwwroot/
 # --- Avalonia specific ---
 !Avalonia.Themes.Default/
 
-
-# --- MasterKey ---
-appsettings.Secret.json
