@@ -10,6 +10,8 @@ namespace uchat_server.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("PRAGMA foreign_keys = 0;", suppressTransaction: true);
+
             migrationBuilder.DropColumn(
                 name: "Text",
                 table: "Messages");
@@ -27,6 +29,8 @@ namespace uchat_server.Migrations
                 type: "BLOB",
                 nullable: false,
                 defaultValue: new byte[0]);
+
+            migrationBuilder.Sql("PRAGMA foreign_keys = 1;", suppressTransaction: true);
         }
 
         /// <inheritdoc />
